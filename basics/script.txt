@@ -1,0 +1,117 @@
+0, 0, 0, 0, 0, 0, 0, 0
+$ adding_oscillators, 9888, 4943, 4945, N
+#
+v1 = osc_saw(0, 500, 77);
+v2 = osc_saw(1, 515, 79);
+v1 = add(v1, v2);
+
+$ adding_more_oscillators, 9888, 4943, 4945, N
+#
+v1 = osc_saw(0, 500, 77);
+v2 = osc_saw(1, 515, 79);
+v1 = add(v1, v2);
+v2 = osc_saw(3, 1010, 79);
+v1 = add(v1, v2);
+v2 = osc_saw(5, 750, 57);
+v1 = add(v1, v2);
+
+$ multiplying_oscillators, 7320, 3659, 3661, N
+#
+v1 = osc_tri(0, 500, 127);
+v2 = osc_tri(1, 598, 127);
+v1 = mul(v1, v2);
+
+$ multiply_with_envelope, 4096, 2047, 2049, N
+#
+v1 = osc_sine(0, 500, 127);
+v2 = envd(1, 11, 0, 127);
+v1 = mul(v1, v2);
+
+$ envelope_modulates_pitch, 13824, 6911, 6913, N
+#
+v2 = enva(0, 20, 0, 127);
+v2 = mul(v2, 698);
+v2 = add(v2, 442);
+v1 = osc_tri(3, v2, 127);
+
+$ frequency_modulation, 13824, 6911, 6913, N
+#
+v2 = enva(0, 20, 0, 127);
+v2 = mul(v2, 698);
+v2 = add(v2, 442);
+v1 = osc_tri(3, v2, 127);
+v2 = osc_tri(4, 550, 127);
+v1 = mul(v1, v2);
+
+$ noise_in_lowpass_filter, 16266, 8132, 8134, N
+#
+v1 = osc_noise(127);
+v1 = sv_flt_n(1, v1, 18, 0, 0);
+
+$ lfo_filter_modulation, 9352, 4675, 4677, N
+#
+v2 = osc_sine(0, 21, 127);
+v2 = ctrl(v2);
+v1 = osc_saw(2, 500, 127);
+v1 = sv_flt_n(3, v1, v2, 35, 0);
+
+$ lfo_filter_modulation_hpf, 11792, 5895, 5897, N
+#
+v2 = osc_sine(0, 9, 127);
+v2 = ctrl(v2);
+v1 = osc_saw(2, 500, 72);
+v3 = osc_saw(3, 509, 72);
+v1 = add(v1, v3);
+v1 = sv_flt_n(5, v1, v2, 11, 1);
+
+$ reverb, 17486, 8742, 8744, N
+#
+v1 = osc_saw(0, 500, 98);
+v2 = envd(1, 9, 0, 127);
+v1 = mul(v1, v2);
+v2 = reverb(v1, 117, 20);
+v1 = add(v1, v2);
+
+$ clone_sample_backward, 4096, 2047, 2049, N
+#
+v1 = clone_reverse(smp,3, 0);
+
+$ chord_generator, 6912, 3455, 3457, N
+#
+v1 = chordgen(0, 0, 10, 7, 12, 61);
+v2 = envd(1, 15, 0, 127);
+v1 = mul(v1, v2);
+
+$ perfect_loop_generator, 4096, 2047, 2049, Y
+#
+v1 = clone(smp,3, 0);
+
+$ clone_inst1, 9888, 8794, 1094, N
+#
+v1 = clone(smp,0, 0);
+
+$ test_osc_tri, 6158, 6156, 2, N
+#
+v1 = osc_tri(0, 300, 127);
+
+$ test_osc_sine, 6158, 6156, 2, N
+#
+v1 = osc_sine(0, 200, 64);
+
+$ test_osc_pulse, 4838, 4836, 2, N
+#
+v1 = osc_pulse(0, 200, 96, 40);
+
+$ test_osc_noise, 4398, 3078, 1320, N
+#
+v1 = osc_noise(33);
+
+$ test_chord_only, 4944, 3956, 988, N
+#
+v1 = chordgen(0, 0, 8, 2, 12, 37);
+
+$ test_cmb_flt, 6598, 6596, 2, N
+#
+v1 = clone(smp,0, 0);
+v1 = cmb_flt_n(1, v1, 356, 68, 128);
+

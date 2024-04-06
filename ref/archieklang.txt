@@ -1,0 +1,9 @@
+ArchieKlang
+~~~
+
+Questions:
+- What happens to samples that go off the end?
+E.g. in Chord Gen there is a shift (offset) value - this can easily go off the end once Note 12 is included (sample index *2). ==> presume 0 sample byte.
+
+- Looks like a small precision error with LoopGen vs C code?
+  Trying to lerp but from 0x7fff to 0x0.
