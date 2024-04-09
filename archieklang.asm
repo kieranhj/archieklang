@@ -5,6 +5,10 @@
 .equ _DEBUG, 1
 .equ LibDivide_UseRecipTable, 0
 
+.equ _PLAY_SONG, 0
+.equ _PLAY_REFERENCE_SAMPLES, 0
+.equ _SAVE_GEN_SAMPLES, 1
+
 .include "lib/swis.h.asm"
 
 .org 0x8000
@@ -24,6 +28,9 @@ stack_base:
 ; Main
 ; ============================================================================
 
+generated_samples_p:
+    .long Generated_Samples
+
 main:
 	str lr, [sp, #-4]!
 
@@ -36,16 +43,33 @@ main:
     ; r10 = External Samples Address (need not be in chip memory, and can be freed after sample rendering complete)
     ; ============================================================================
 
-    adr r8, Generated_Samples
+    ldr r8, generated_samples_p
     adr r9, Scratch_Space
     mov r10, #0
     bl AK_Generate
+    ; R8=end of generated sample buffer.
 
-    swi OS_WriteI+10
-    swi OS_WriteI+13
+    ldr r7, generated_samples_p
+    sub r0, r8, r7
+    bl write_num
+
+    adr r0, total_msg
+    swi OS_WriteO
+
+    .if _SAVE_GEN_SAMPLES
+    adr r0, saving_msg
+    swi OS_WriteO
+
+    mov r0, #10 ; save block w/ type
+    adr r1, save_filename
+    mov r2, #0xffd
+    ldr r4, generated_samples_p     ; start address of data
+    mov r5, r8                      ; end address of data
+    swi OS_File
+    .endif
 
     ; Verify samples..
-    adr r8, Generated_Samples
+    ldr r8, generated_samples_p
     adr r9, Reference_Samples
     mov r11, #0                 ; sample nr
 .1:
@@ -67,8 +91,14 @@ main:
     mov r0, r7
     bl write_num
 
+    adr r0, off_msg
+    swi OS_WriteO
+
+    ldr r0, generated_samples_p
+    sub r0, r8, r0
+    bl write_hex8
+
     swi OS_WriteI+')'
-    swi OS_WriteI+'.'
     swi OS_WriteI+'.'
     swi OS_WriteI+'.'
 
@@ -82,7 +112,13 @@ main:
     cmp r3, r4
     beq .4
 
-    sub r0, r4, r3
+    mov r0, r3, asl #24
+    mov r0, r0, asr #24
+    mov r1, r4, asl #24
+    mov r1, r1, asr #24
+    subs r0, r1, r0
+;    cmp r0, #0x80
+    rsbmi r0, r0, #0
     cmp r0, r12
     movgt r12, r0
 
@@ -144,6 +180,16 @@ main:
     cmp r11, #AK_MaxInstruments
     blt .1
 
+    .if _PLAY_SONG
+    adr r0, playing_msg
+    swi OS_WriteO
+
+    mov r0, #0
+    adr r1, MOD_data
+    swi QTM_Load
+    swi QTM_Start
+    .endif
+
 	ldr pc, [sp], #4
 	swi OS_Exit
 
@@ -164,6 +210,14 @@ write_hex:
 	swi OS_WriteO
     mov pc, lr
 
+write_hex8:
+	adr r1, string_buffer
+	mov r2, #16
+	swi OS_ConvertHex8
+	adr r0, string_buffer
+	swi OS_WriteO
+    mov pc, lr
+
 string_buffer:
 	.skip 16
 
@@ -171,12 +225,24 @@ generating_msg:
     .byte "Generating samples",0
     .p2align 2
 
+saving_msg:
+    .byte "Saving samples...",13,10,0
+    .p2align 2
+
+playing_msg:
+    .byte "Playing MOD...",13,10,0
+    .p2align 2
+
 verifying_msg:
-    .byte "Verifying sample ",0
+    .byte "Verifying ",0
     .p2align 2
 
 length_msg:
-    .byte " (length ",0
+    .byte " (len ",0
+    .p2align 2
+
+off_msg:
+    .byte " off ",0
     .p2align 2
 
 errors_msg:
@@ -201,6 +267,14 @@ mismatch_msg:
 
 vs_msg:
     .byte " ref:",0
+    .p2align 2
+
+total_msg:
+    .byte " bytes total!",13,10
+    .p2align 2
+
+save_filename:
+    .byte "gen_smp",0
     .p2align 2
 
 ; ============================================================================
@@ -228,12 +302,6 @@ vs_msg:
 ; Data.
 ; ============================================================================
 
-.p2align 8
-Reference_Samples:
-.incbin "basics/basics.mod.smp"
-;.incbin "columbia/Virgill-colombia.mod.smp"
-.p2align 2
-
 ; ============================================================================
 ; BSS.
 ; ============================================================================
@@ -242,5 +310,22 @@ Reference_Samples:
 Scratch_Space:
     .skip 65536
 
+.if !_PLAY_REFERENCE_SAMPLES
+Reference_Samples:
+.incbin "basics/basics.mod.smp"
+;.incbin "columbia/Virgill-colombia.mod.smp"
+.p2align 2
+.endif
+
 .p2align 8
+MOD_data:
+;.incbin "columbia/Virgill-colombia.mod.trk"
+
+.if _PLAY_REFERENCE_SAMPLES
+Reference_Samples:
+.incbin "basics/basics.mod.smp"
+;.incbin "columbia/Virgill-colombia.mod.smp"
+.p2align 2
+.endif
+
 Generated_Samples:

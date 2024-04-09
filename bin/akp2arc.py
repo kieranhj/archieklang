@@ -85,8 +85,9 @@ class AkpParser:
         params_C=parse("v{:d}, {:d}", param_string)
 
         if params_V is not None:
-            # self.sign_extend(asm_file, params_V[0]-1)
-            # if params_V[0]!=params_V[1]:
+            # This has no bearing. :\
+            #self.sign_extend(asm_file, params_V[0]-1)
+            #if params_V[0]!=params_V[1]:
             #    self.sign_extend(asm_file, params_V[1]-1)
 
             if params_V[0]==params_V[1]:
