@@ -17,29 +17,50 @@ class AkpParser:
         asm_file.write(f'\tmov r{reg}, r{reg}, asl #16\n')
         asm_file.write(f'\tmov r{reg}, r{reg}, asr #16\t; Sign extend word to long.\n')
 
-    def clamp(self, asm_file, var):
+    def cast_short_to_int(self, asm_file, reg):
+        asm_file.write(f'\tmov r{reg}, r{reg}, asr #16\t; cast to int.\n')
+
+    def cast_int_to_short(self, asm_file, reg):
+        asm_file.write(f'\tmov r{reg}, r{reg}, asl #16\t; cast to short.\n')
+
+    def clamp_int(self, asm_file, var):
         if var>4:
-            asm_file.write(f'\t; r{var-1} = clamp(r{var-1})\n')
+            asm_file.write(f'\t; r{var-1} = clamp_int(r{var-1})\n')
         else:
-            asm_file.write(f'\t; v{var} = clamp(v{var})\n')
+            asm_file.write(f'\t; v{var} = clamp_int(v{var})\n')
         asm_file.write(f'\tcmp r{var-1}, r11\t\t; #32767\n')
         asm_file.write(f'\tmovgt r{var-1}, r11\t; #32767\n')
         asm_file.write(f'\tcmn r{var-1}, r11\t\t; #-32768\n')
         asm_file.write(f'\tmvnlt r{var-1}, r11\t; #-32768\n')
 
-    def vol(self, asm_file, var, gain_V, gain_C):
+    def vol_short(self, asm_file, var, gain_V, gain_C, short):
+        if short:
+            vol_name='vol_short'
+        else:
+            vol_name='vol_int'
         if gain_V is not None:
             if var>4:
-                asm_file.write(f'\t; r{var-1} = vol(v{gain_V[0]})\n')
+                asm_file.write(f'\t; r{var-1} = {vol_name}(v{gain_V[0]})\n')
             else:
-                asm_file.write(f'\t; v{var} = vol(v{gain_V[0]})\n')
+                asm_file.write(f'\t; v{var} = {vol_name}(v{gain_V[0]})\n')
+
+            if short:
+                self.cast_short_to_int(asm_file, var-1)
+                self.cast_short_to_int(asm_file, gain_V[0]-1)
+
             asm_file.write(f'\tmul r{var-1}, r{gain_V[0]-1}, r{var-1}\n')
             asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #7\n')
+
+            if short:
+                self.cast_int_to_short(asm_file, gain_V[0]-1)
         else:
             if var>4:
-                asm_file.write(f'\t; r{var-1} = vol({gain_C[0]})\n')
+                asm_file.write(f'\t; r{var-1} = {vol_name}({gain_C[0]})\n')
             else:
-                asm_file.write(f'\t; v{var} = vol({gain_C[0]})\n')
+                asm_file.write(f'\t; v{var} = {vol_name}({gain_C[0]})\n')
+
+            if short:
+                self.cast_short_to_int(asm_file, var-1)
 
             shift_val=gain_C[0]
             shift_bit=shift_val & (shift_val-1)
@@ -65,31 +86,40 @@ class AkpParser:
 
                 asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #7\n')
 
+        if short:
+            self.cast_int_to_short(asm_file, var-1)
+
     def func_add(self, asm_file, var, param_string):
         params_V=parse("v{:d}, v{:d}", param_string)
         params_C=parse("v{:d}, {:d}", param_string)
 
         if params_V is not None:
-            self.sign_extend(asm_file, params_V[0]-1)
-            self.sign_extend(asm_file, params_V[1]-1)
+            self.cast_short_to_int(asm_file, params_V[0]-1)
+            if params_V[0]!=params_V[1]:
+                self.cast_short_to_int(asm_file, params_V[1]-1)
             asm_file.write(f'\tadd r{var-1}, r{params_V[0]-1}, r{params_V[1]-1}\n')
+            if var!=params_V[0]:
+                self.cast_int_to_short(asm_file, params_V[0]-1)
+            if var!=params_V[1]:
+                self.cast_int_to_short(asm_file, params_V[1]-1)
         else:
-            # TODO: Constant array?
-            self.sign_extend(asm_file, params_C[0]-1)
+            self.cast_short_to_int(asm_file, params_C[0]-1)
             asm_file.write(f'\tadd r{var-1}, r{params_C[0]-1}, #{params_C[1]}\n')
+            if var!=params_C[0]:
+                self.cast_int_to_short(asm_file, params_C[0]-1)
 
-        self.clamp(asm_file, var)
+        self.clamp_int(asm_file, var)
+        self.cast_int_to_short(asm_file, var-1)
+
 
     def func_mul(self, asm_file, var, param_string):
         params_V=parse("v{:d}, v{:d}", param_string)
         params_C=parse("v{:d}, {:d}", param_string)
 
         if params_V is not None:
-            # This has no bearing. :\
-            #self.sign_extend(asm_file, params_V[0]-1)
-            #if params_V[0]!=params_V[1]:
-            #    self.sign_extend(asm_file, params_V[1]-1)
-
+            self.cast_short_to_int(asm_file, params_V[1]-1)
+            self.cast_short_to_int(asm_file, params_V[0]-1)
+                                   
             if params_V[0]==params_V[1]:
                 asm_file.write(f'\tmov r14, r{params_V[1]-1}\n')
                 asm_file.write(f'\tmul r{var-1}, r14, r{params_V[0]-1}\n')
@@ -99,11 +129,16 @@ class AkpParser:
                 asm_file.write(f'\tmul r{var-1}, r{params_V[0]-1}, r{params_V[1]-1}\n')
 
             asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #15\n')
+
+            if var!=params_V[0]:
+                self.cast_int_to_short(asm_file, params_V[0]-1)
+            if var!=params_V[1]:
+                self.cast_int_to_short(asm_file, params_V[1]-1)
         else:
             shift_val=params_C[1]
             shift_bit=shift_val & (shift_val-1)
 
-            # self.sign_extend(asm_file, params_C[0]-1)
+            self.cast_short_to_int(asm_file, params_C[0]-1)
 
             if shift_bit==0:
                 # Shift for 2^N muls.
@@ -129,6 +164,12 @@ class AkpParser:
                 asm_file.write(f'\tmul r{var-1}, r14, r{params_C[0]-1}\n')
                 asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #15\n')
 
+            if var!=params_C[0]:
+                self.cast_int_to_short(asm_file, params_C[0]-1)
+
+        self.cast_int_to_short(asm_file, var-1)
+
+
     def func_osc_saw(self, asm_file, var, param_string):
         param_strings=parse("{:d}, {}, {}", param_string)
 
@@ -138,6 +179,7 @@ class AkpParser:
         gain_C=parse("{:d}", param_strings[2])
 
         asm_file.write(f'\tldr r{var-1}, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
+        self.cast_short_to_int(asm_file, var-1)
 
         if freq_V is not None:
             if freq_V[0]==var:
@@ -146,10 +188,10 @@ class AkpParser:
         else:
             asm_file.write(f'\tadd r{var-1}, r{var-1}, #{freq_C[0]}\n')
 
-        self.sign_extend(asm_file, var-1)
+        self.cast_int_to_short(asm_file, var-1)
         asm_file.write(f'\tstr r{var-1}, [r10, #AK_OPINSTANCE+4*{self._instance}]\t\n')
 
-        self.vol(asm_file, var, gain_V, gain_C)
+        self.vol_short(asm_file, var, gain_V, gain_C, True)
         self._instance+=1
 
     def func_osc_sine(self, asm_file, var, param_string):
@@ -165,23 +207,23 @@ class AkpParser:
         if freq_V is not None:
             asm_file.write(f'\tadd r6, r6, r{freq_V[0]-1}\n')
         else:
-            asm_file.write(f'\tadd r6, r6, #{freq_C[0]}\n')
+            asm_file.write(f'\tadd r6, r6, #{freq_C[0]}<<16\t; cast to short.\n')
 
-        # self.sign_extend(asm_file, 6)
         asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
 
-        asm_file.write(f'\tsub r6, r6, #16384\n')
-        self.sign_extend(asm_file, 6)
-
+        asm_file.write(f'\tsub r6, r6, #16384<<16\t; cast to short.\n')
         asm_file.write(f'\tmovs r4, r6\n')
-        asm_file.write(f'\trsblt r4, r4, #0\n')
+        asm_file.write(f'\trsblt r4, r4, #0\t; abs(r6)\n')
 
-        asm_file.write(f'\tsub r4, r11, r4\t; #32767\n')
+        asm_file.write(f'\trsb r4, r4, r11, asl #16\t; #32767-abs(r6)\n')
+        self.cast_short_to_int(asm_file, 4)
+        self.cast_short_to_int(asm_file, 6)
         asm_file.write(f'\tmul r4, r6, r4\n')
         asm_file.write(f'\tmov r4, r4, asr #16\n')
         asm_file.write(f'\tmov r{var-1}, r4, asl #3\n')
 
-        self.vol(asm_file, var, gain_V, gain_C)
+        self.vol_short(asm_file, var, gain_V, gain_C, False)
+        self.cast_int_to_short(asm_file, var-1)
         self._instance+=1
 
     def func_osc_tri(self, asm_file, var, param_string):
@@ -193,21 +235,26 @@ class AkpParser:
         gain_C=parse("{:d}", param_strings[2])
 
         asm_file.write(f'\tldr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
+        self.cast_short_to_int(asm_file, 6)
 
         if freq_V is not None:
-            asm_file.write(f'\tadd r6, r6, r{freq_V[0]-1}\n')
+            asm_file.write(f'\tadd r6, r6, r{freq_V[0]-1}, asr #16\t; cast to int.\n')
         else:
             asm_file.write(f'\tadd r6, r6, #{freq_C[0]}\n')
 
-        self.sign_extend(asm_file, 6)
+        self.cast_int_to_short(asm_file, 6)
         asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
+
+        self.cast_short_to_int(asm_file, 6)
         asm_file.write(f'\tcmp r6, #0\n')
         asm_file.write(f'\tmvnmi r6, r6\n')
         asm_file.write(f'\tsub r6, r6, #16384\n')
         asm_file.write(f'\tmov r{var-1}, r6, asl #1\n')
   
-        self.vol(asm_file, var, gain_V, gain_C)
+        self.vol_short(asm_file, var, gain_V, gain_C, False)
+        self.cast_int_to_short(asm_file, var-1)
         self._instance+=1
+
 
     def func_osc_pulse(self, asm_file, var, param_string):
         param_strings=parse("{:d}, {}, {}, {}", param_string)
@@ -222,15 +269,15 @@ class AkpParser:
         asm_file.write(f'\tldr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
 
         if freq_V is not None:
-            asm_file.write(f'\tadds r6, r6, r{freq_V[0]-1}\n')
+            asm_file.write(f'\tadds r6, r6, r{freq_V[0]-1}, asr #16\t; cast to int.\n')
         else:
             asm_file.write(f'\tadds r6, r6, #{freq_C[0]}\n')
 
-        self.sign_extend(asm_file, 6)
         asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
 
         if duty_V is not None:
-            asm_file.write(f'\tsub r4, {duty_V[0]-1}, #63\n')
+            asm_file.write(f'\tmov r5, #63\n')
+            asm_file.write(f'\trsb r4, r5, {duty_V[0]-1}, asr #16\t; cast to int.\n')
             asm_file.write(f'\tmov r4, r4, asl #9\n')
         else:
             const=(duty_C[0]-63)<<9
@@ -239,11 +286,12 @@ class AkpParser:
             else:
                 asm_file.write(f'\tmov r4, #{const}\t; ({duty_C[0]}-63)<<9\n')
 
-        asm_file.write(f'\tcmp r6, r4\n')
+        self.cast_int_to_short(asm_file, 6)
+        asm_file.write(f'\tcmp r6, r4, asl #16\t; cast to short.\n')
         asm_file.write(f'\tmvnlt r{var-1}, r11\t; #-32768\n')
         asm_file.write(f'\tmovge r{var-1}, r11\t; #32767\n')
-
-        self.vol(asm_file, var, gain_V, gain_C)
+        self.vol_short(asm_file, var, gain_V, gain_C, False)
+        self.cast_int_to_short(asm_file, var-1)
         self._instance+=1
 
     def func_osc_noise(self, asm_file, var, param_string):
@@ -262,8 +310,8 @@ class AkpParser:
         asm_file.write(f'\tadd r6, r6, r4\n')
         asm_file.write(f'\tstr r6, [r10, #AK_NOISESEEDS+4]\n')
 
-        self.sign_extend(asm_file, var-1)
-        self.vol(asm_file, var, gain_V, gain_C)
+        self.vol_short(asm_file, var, gain_V, gain_C, False)
+        self.cast_int_to_short(asm_file, var-1)
 
     def func_enva(self, asm_file, var, param_string):
         params=parse("{:d}, {:d}, {:d}, {}", param_string)
@@ -272,14 +320,17 @@ class AkpParser:
         gain_C=parse("{:d}", params[3])
 
         asm_file.write(f'\tldr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
+        # Already int.
         asm_file.write(f'\tmov r{var-1}, r6, asr #8\n')
         asm_file.write(f'\tmov r4, #{DECAY_TABLE[params[1]]}\n')    # attack
         asm_file.write(f'\tadd r6, r6, r4\n')
         asm_file.write(f'\tcmp r6, r11, asl #8\n')
         asm_file.write(f'\tmovgt r6, r11, asl #8\n')
+        # Keep as int.
         asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
 
-        self.vol(asm_file, var, gain_V, gain_C)
+        self.vol_short(asm_file, var, gain_V, gain_C, False)
+        self.cast_int_to_short(asm_file, var-1)
         self._instance+=1
 
     def func_envd(self, asm_file, var, param_string):
@@ -289,7 +340,8 @@ class AkpParser:
         gain_C=parse("{:d}", params[3])
 
         asm_file.write(f'\tldr r6, [r10, #AK_ENVDVALUE+4*{self._dvalue}]\t; Init EnvDValue with 32676<<16\n')
-        asm_file.write(f'\tmov r{var-1}, r6, asr #16\n')
+        # Already short.
+        asm_file.write(f'\tmov r{var-1}, r6, asr #16\t; cast to int.\n')
         asm_file.write(f'\tmov r4, #{DECAY_TABLE[params[1]]}\n')
         asm_file.write(f'\tsubs r6, r6, r4, asl #8\n')
         if params[2] != 0:
@@ -299,7 +351,8 @@ class AkpParser:
             asm_file.write(f'\tmovle r6, #0\n')
         asm_file.write(f'\tstr r6, [r10, #AK_ENVDVALUE+4*{self._dvalue}]\n')
 
-        self.vol(asm_file, var, gain_V, gain_C)
+        self.vol_short(asm_file, var, gain_V, gain_C, False)
+        self.cast_int_to_short(asm_file, var-1)
         self._dvalue+=1
 
     def func_clone(self, asm_file, var, param_string):
@@ -318,6 +371,7 @@ class AkpParser:
         asm_file.write(f'\tmovge r{var-1}, #0\n')
         asm_file.write(f'\tldrltb r{var-1}, [r6, r{var-1}]\n')
         asm_file.write(f'\tmov r{var-1}, r{var-1}, asl #8\n')
+        self.cast_int_to_short(asm_file, var-1)
 
     def func_clone_reverse(self, asm_file, var, param_string):
         params=parse("{},{:d}, {:d}", param_string)
@@ -338,12 +392,13 @@ class AkpParser:
         # asm_file.write(f'\trsblt r{var-1}, r{var-1}, #0\n')
         asm_file.write(f'\tldrltb r{var-1}, [r6, r{var-1}]\n')
         asm_file.write(f'\tmov r{var-1}, r{var-1}, asl #8\n')
+        self.cast_int_to_short(asm_file, var-1)
 
     def func_ctrl(self, asm_file, var, param_string):
         src_var=parse("v{:d}", param_string)
-        asm_file.write(f'\tmov r{var-1}, r{src_var[0]-1}, asr #9\n')
-        self.sign_extend(asm_file, var-1)
+        asm_file.write(f'\tmov r{var-1}, r{src_var[0]-1}, asr #9+16\t; cast to int.\n')
         asm_file.write(f'\tadd r{var-1}, r{var-1}, #64\n')
+        self.cast_int_to_short(asm_file, var-1)
 
     def func_dly_cyc(self, asm_file, var, param_string):
         param_strings=parse("{:d}, {}, {}, {}", param_string)
@@ -356,6 +411,7 @@ class AkpParser:
         gain_V=parse("v{:d}", param_strings[3])
         gain_C=parse("{:d}", param_strings[3])
 
+        # Stay in short.
         asm_file.write(f'\tmov r{var-1}, r{val_V[0]-1}\n')
         self.vol(asm_file, var, gain_V, gain_C)
 
@@ -377,6 +433,7 @@ class AkpParser:
     def func_reverb(self, asm_file, var, param_string):
         param_strings=parse("{}, {}, {}", param_string)
 
+        asm_file.write(f'\t; Accumulate reverb val as int in r12.\n')
         self.func_cmb_flt_n(asm_file, 13, f'16, {param_strings[0]}, 557, {param_strings[1]}, {param_strings[2]}')
         asm_file.write(f'\tmov r{var-1}, r12\n')
         asm_file.write(f'\tadd r9, r9, #2048*4\n')
@@ -402,7 +459,8 @@ class AkpParser:
         asm_file.write(f'\tadd r{var-1}, r{var-1}, r12\n')
         asm_file.write(f'\tsub r9, r9, #2048*4*7\n')
 
-        self.clamp(asm_file, var)
+        self.clamp_int(asm_file, var)
+        self.cast_int_to_short(asm_file, var)
 
     def func_cmb_flt_n(self, asm_file, var, param_string):
         param_strings=parse("{:d}, {}, {}, {}, {}", param_string)
@@ -420,11 +478,10 @@ class AkpParser:
         asm_file.write(f'\tldr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
         asm_file.write(f'\tldr r4, [r9, r6, lsl #2]\n')
 
-        self.vol(asm_file, 5, feedback_V, feedback_C)
+        self.vol_short(asm_file, 5, feedback_V, feedback_C, False)
 
-        self.sign_extend(asm_file, val_V[0]-1)
-        asm_file.write(f'\tadd r{var-1}, r{val_V[0]-1}, r4\n')
-        self.clamp(asm_file, var)
+        asm_file.write(f'\tadd r{var-1}, r4, r{val_V[0]-1}, asr #16\t; cast to int.\n')
+        self.clamp_int(asm_file, var)
         asm_file.write(f'\tstr r{var-1}, [r9, r6, lsl #2]\n')
         asm_file.write(f'\tadd r6, r6, #1\n')
 
@@ -437,7 +494,8 @@ class AkpParser:
         asm_file.write(f'\tmovge r6, #0\n')
         asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
         
-        self.vol(asm_file, var, gain_V, gain_C)
+        self.vol_short(asm_file, var, gain_V, gain_C, False)
+        self.cast_int_to_short(asm_file, var-1)
         self._instance+=1
 
     def func_sv_flt_n(self, asm_file, var, param_string):
@@ -460,29 +518,30 @@ class AkpParser:
         asm_file.write(f'\tmov r14, r6, asr #7\n')
 
         if cutoff_V is not None:
+            self.cast_short_to_int(asm_file, cutoff_V[0]-1)
             asm_file.write(f'\tmla r4, r{cutoff_V[0]-1}, r14, r4\n')
         else:
             asm_file.write(f'\tmov r12, #{cutoff_C[0]}\n')
             asm_file.write(f'\tmla r4, r14, r12, r4\n')
 
-        self.clamp(asm_file, 5) # r4
+        self.clamp_int(asm_file, 5) # r4
         asm_file.write(f'\tstr r4, [r10, #AK_OPINSTANCE+4*({self._instance}+AK_LPF)]\n')
 
         if resonance_V is not None:
+            if cutoff_V is not None and cutoff_V[0]!=resonance_V[0]:
+                self.cast_short_to_int(asm_file, resonance_V[0]-1)
             asm_file.write(f'\tmul r14, r{resonance_V[0]-1}, r14\n')
         else:
             # TODO: Shift for 2^N.
             asm_file.write(f'\tmov r12, #{resonance_C[0]}\n')
             asm_file.write(f'\tmul r14, r12, r14\n')
 
-        # self.sign_extend(asm_file, 4)
         asm_file.write(f'\tmov r12, r{val_V[0]-1}\n')
-        # self.sign_extend(asm_file, 12)
 
         asm_file.write(f'\tsub r12, r12, r4\n')
         asm_file.write(f'\tsub r5, r12, r14\n')
 
-        self.clamp(asm_file, 6) # r5
+        self.clamp_int(asm_file, 6) # r5
         asm_file.write(f'\tstr r5, [r10, #AK_OPINSTANCE+4*({self._instance}+AK_HPF)]\n')
     
         asm_file.write(f'\tmov r14, r5, asr #7\n')
@@ -494,7 +553,7 @@ class AkpParser:
             asm_file.write(f'\tmov r12, #{cutoff_C[0]}\n')
             asm_file.write(f'\tmla r6, r12, r14, r6\n')
 
-        self.clamp(asm_file, 7) # r6
+        self.clamp_int(asm_file, 7) # r6
 
         # TODO: Replace with stmia?
         asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*({self._instance}+AK_BPF)]\n')
@@ -507,7 +566,15 @@ class AkpParser:
             asm_file.write(f'\tmov r{var-1}, r6\n')
         elif mode==2:
             asm_file.write(f'\tadd r{var-1}, r5, r6\n')
-            self.clamp(asm_file, var)
+            self.clamp_int(asm_file, var)
+
+        self.cast_int_to_short(asm_file, var-1)
+        if cutoff_V is not None and cutoff_V[0]!=var:
+            self.cast_int_to_short(asm_file, cutoff_V[0]-1)
+            if resonance_V is not None and resonance_V[0]!=cutoff_V[0] and resonance_V[0]!=var:
+                self.cast_int_to_short(asm_file, resonance_V[0]-1)
+        elif resonance_V is not None and resonance_V[0]!=var:
+                self.cast_int_to_short(asm_file, resonance_V[0]-1)
 
         self._instance+=3
 
@@ -544,6 +611,7 @@ class AkpParser:
         shift_V=parse("v{:d}", param_strings[5])
         shift_C=parse("{:d}", param_strings[5])
 
+        asm_file.write(f'\t; Accumulate chord val as int in r6.\n')
         asm_file.write(f'\tldr r4, [r10, #AK_SMPADDR+4*{sample_nr}]\n')
         asm_file.write(f'\tldr r12, [r10, #AK_SMPLEN+4*{sample_nr}]\n')
         
@@ -572,7 +640,8 @@ class AkpParser:
         self.chord_note(asm_file, note1, note2, note3, 12, 2, 0)
 
         asm_file.write(f'\tmov r{var-1}, r6\n')
-        self.clamp(asm_file, var)
+        self.clamp_int(asm_file, var)
+        self.cast_int_to_short(asm_file, var-1)
         self._instance+=3
 
 
@@ -705,6 +774,7 @@ class AkpParser:
             if self._dvalue > self._max_dvalues:
                 self._max_dvalues = self._dvalue
 
+            self.cast_short_to_int(asm_file, 0)
             asm_file.write(f'\tmov r0, r0, asr #8\n')
             asm_file.write(f'\tstrb r0, [r8], #1\n\n')
             asm_file.write(f'\tAK_FINE_PROGRESS\n\n')
