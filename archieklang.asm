@@ -5,7 +5,7 @@
 .equ _DEBUG, 1
 .equ LibDivide_UseRecipTable, 0
 
-.equ _PLAY_SONG, 0
+.equ _PLAY_SONG, 1
 .equ _PLAY_REFERENCE_SAMPLES, 0
 .equ _SAVE_GEN_SAMPLES, 1
 
@@ -112,16 +112,6 @@ main:
     cmp r3, r4
     beq .4
 
-    mov r0, r3, asl #24
-    mov r0, r0, asr #24
-    mov r1, r4, asl #24
-    mov r1, r1, asr #24
-    subs r0, r1, r0
-;    cmp r0, #0x80
-    rsbmi r0, r0, #0
-    cmp r0, r12
-    movgt r12, r0
-
     add r5, r5, #1      ; errors
     cmp r5, #1
     bgt .4
@@ -145,6 +135,36 @@ main:
     bl write_hex
 
 .4:
+    ; Max error.
+    mov r3, r3, asl #24
+    mov r3, r3, asr #24
+    mov r4, r4, asl #24
+    mov r4, r4, asr #24
+    eors r0, r3, r4          ; sign same or different?
+    bmi .41
+
+    ; Signs same.
+    cmp r3, #0
+    rsbmi r3, r3, #0        ; abs(r3)
+    cmp r4, #0
+    rsbmi r4, r4, #0        ; abs(r4)
+    subs r1, r3, r4
+    rsbmi r1, r1, #0        ; abs(abs(r3)-abs(r4))
+    cmp r1, r12
+    movgt r12, r1
+    b .42
+
+.41:
+    ; Signs different.
+    cmp r3, #0
+    rsbmi r3, r3, #0        ; abs(r3)
+    cmp r4, #0
+    rsbmi r4, r4, #0        ; abs(r4)
+    add r1, r3, r4          ; abs(r3)+abs(r4)
+    cmp r1, r12
+    movgt r12, r1
+
+.42:
     add r6, r6, #1
     cmp r6, r7
     blt .3
@@ -312,19 +332,22 @@ Scratch_Space:
 
 .if !_PLAY_REFERENCE_SAMPLES
 Reference_Samples:
-.incbin "basics/basics.mod.smp"
-;.incbin "columbia/Virgill-colombia.mod.smp"
+;.incbin "basics/basics.mod.smp"
+.incbin "columbia/Virgill-colombia.mod.smp"
+;.incbin "columbia/Virgill-colombia-test.mod.smp"
 .p2align 2
 .endif
 
 .p2align 8
 MOD_data:
-;.incbin "columbia/Virgill-colombia.mod.trk"
+.incbin "columbia/Virgill-colombia.mod.trk"
+;.incbin "columbia/Virgill-colombia-test.mod.trk"
 
 .if _PLAY_REFERENCE_SAMPLES
 Reference_Samples:
-.incbin "basics/basics.mod.smp"
-;.incbin "columbia/Virgill-colombia.mod.smp"
+;.incbin "basics/basics.mod.smp"
+.incbin "columbia/Virgill-colombia.mod.smp"
+;.incbin "columbia/Virgill-colombia-test.mod.smp"
 .p2align 2
 .endif
 

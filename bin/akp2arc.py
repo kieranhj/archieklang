@@ -7,6 +7,9 @@ import os
 import struct
 from parse import *
 
+DEBUG_INSTRUMENT=0
+DEBUG_SAMPLE=0
+
 DECAY_TABLE = [32767, 32767, 32767, 16384, 10922, 8192, 6553, 4681, 3640, 2978, 2520, 2048, 1724, 1489, 1310, 1129, 992, 885, 799, 712, 642, 585, 537, 489, 448, 414, 385, 356, 330, 309, 289, 270, 254, 239, 225, 212, 201, 190, 181, 171, 163, 155, 148, 141, 134, 129, 123, 118, 113, 108, 104, 100, 96, 93, 89, 86, 83, 80, 77, 75, 72, 70, 68, 65, 63, 61, 60, 58, 56, 54, 53, 51, 50, 49, 47, 46, 45, 44, 43, 41, 40, 39, 38, 38, 37, 36, 35, 34, 33, 33, 32, 31, 30, 30, 29, 29, 28, 27, 27, 26, 26, 25, 25, 24, 24, 23, 23, 22, 22, 22, 21, 21, 20, 20, 20, 19, 19, 19, 18, 18, 18, 17, 17, 17, 17, 16, 16, 16]
 
 class AkpParser:
@@ -22,6 +25,7 @@ class AkpParser:
             asm_file.write(f'\t; r{var-1} = clamp(r{var-1})\n')
         else:
             asm_file.write(f'\t; v{var} = clamp(v{var})\n')
+
         asm_file.write(f'\tcmp r{var-1}, r11\t\t; #32767\n')
         asm_file.write(f'\tmovgt r{var-1}, r11\t; #32767\n')
         asm_file.write(f'\tcmn r{var-1}, r11\t\t; #-32768\n')
@@ -85,11 +89,6 @@ class AkpParser:
         params_C=parse("v{:d}, {:d}", param_string)
 
         if params_V is not None:
-            # This has no bearing. :\
-            #self.sign_extend(asm_file, params_V[0]-1)
-            #if params_V[0]!=params_V[1]:
-            #    self.sign_extend(asm_file, params_V[1]-1)
-
             if params_V[0]==params_V[1]:
                 asm_file.write(f'\tmov r14, r{params_V[1]-1}\n')
                 asm_file.write(f'\tmul r{var-1}, r14, r{params_V[0]-1}\n')
@@ -102,8 +101,6 @@ class AkpParser:
         else:
             shift_val=params_C[1]
             shift_bit=shift_val & (shift_val-1)
-
-            # self.sign_extend(asm_file, params_C[0]-1)
 
             if shift_bit==0:
                 # Shift for 2^N muls.
@@ -167,7 +164,6 @@ class AkpParser:
         else:
             asm_file.write(f'\tadd r6, r6, #{freq_C[0]}\n')
 
-        # self.sign_extend(asm_file, 6)
         asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
 
         asm_file.write(f'\tsub r6, r6, #16384\n')
@@ -288,19 +284,17 @@ class AkpParser:
         gain_V=parse("v{:d}", params[3])
         gain_C=parse("{:d}", params[3])
 
-        asm_file.write(f'\tldr r6, [r10, #AK_ENVDVALUE+4*{self._dvalue}]\t; Init EnvDValue with 32676<<16\n')
-        asm_file.write(f'\tmov r{var-1}, r6, asr #16\n')
         asm_file.write(f'\tmov r4, #{DECAY_TABLE[params[1]]}\n')
-        asm_file.write(f'\tsubs r6, r6, r4, asl #8\n')
+        asm_file.write(f'\tmul r6, r7, r4\n')
+        asm_file.write(f'\tsubs r6, r11, r6, asr #8\n')
         if params[2] != 0:
-            asm_file.write(f'\tcmp r6, #{params[2]}<<24\n')
-            asm_file.write(f'\tmovle r6, #{params[2]}<<24\n')
+            asm_file.write(f'\tcmp r6, #{params[2]<<8}\n')
+            asm_file.write(f'\tmovle r6, #{params[2]<<8}\n')
         else:
             asm_file.write(f'\tmovle r6, #0\n')
-        asm_file.write(f'\tstr r6, [r10, #AK_ENVDVALUE+4*{self._dvalue}]\n')
+        asm_file.write(f'\tmov r{var-1}, r6\n')
 
         self.vol(asm_file, var, gain_V, gain_C)
-        self._dvalue+=1
 
     def func_clone(self, asm_file, var, param_string):
         params=parse("{},{:d}, {:d}", param_string)
@@ -317,7 +311,8 @@ class AkpParser:
         asm_file.write(f'\tcmp r{var-1}, r4\n')
         asm_file.write(f'\tmovge r{var-1}, #0\n')
         asm_file.write(f'\tldrltb r{var-1}, [r6, r{var-1}]\n')
-        asm_file.write(f'\tmov r{var-1}, r{var-1}, asl #8\n')
+        asm_file.write(f'\tmov r{var-1}, r{var-1}, asl #24\n')
+        asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #16\n')
 
     def func_clone_reverse(self, asm_file, var, param_string):
         params=parse("{},{:d}, {:d}", param_string)
@@ -335,9 +330,9 @@ class AkpParser:
         asm_file.write(f'\tcmp r{var-1}, r4\n')
         asm_file.write(f'\tmovge r{var-1}, #0\n')
         asm_file.write(f'\tmvnlt r{var-1}, r{var-1}\n')
-        # asm_file.write(f'\trsblt r{var-1}, r{var-1}, #0\n')
         asm_file.write(f'\tldrltb r{var-1}, [r6, r{var-1}]\n')
-        asm_file.write(f'\tmov r{var-1}, r{var-1}, asl #8\n')
+        asm_file.write(f'\tmov r{var-1}, r{var-1}, asl #24\n')
+        asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #16\n')
 
     def func_ctrl(self, asm_file, var, param_string):
         src_var=parse("v{:d}", param_string)
@@ -378,28 +373,28 @@ class AkpParser:
         param_strings=parse("{}, {}, {}", param_string)
 
         self.func_cmb_flt_n(asm_file, 13, f'16, {param_strings[0]}, 557, {param_strings[1]}, {param_strings[2]}')
-        asm_file.write(f'\tmov r{var-1}, r12\n')
+        asm_file.write(f'\tmov r5, r12\n')
         asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self.func_cmb_flt_n(asm_file, 13, f'17, {param_strings[0]}, 593, {param_strings[1]}, {param_strings[2]}')
-        asm_file.write(f'\tadd r{var-1}, r{var-1}, r12\n')
+        asm_file.write(f'\tadd r5, r5, r12\n')
         asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self.func_cmb_flt_n(asm_file, 13, f'18, {param_strings[0]}, 641, {param_strings[1]}, {param_strings[2]}')
-        asm_file.write(f'\tadd r{var-1}, r{var-1}, r12\n')
+        asm_file.write(f'\tadd r5, r5, r12\n')
         asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self.func_cmb_flt_n(asm_file, 13, f'19, {param_strings[0]}, 677, {param_strings[1]}, {param_strings[2]}')
-        asm_file.write(f'\tadd r{var-1}, r{var-1}, r12\n')
+        asm_file.write(f'\tadd r5, r5, r12\n')
         asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self.func_cmb_flt_n(asm_file, 13, f'20, {param_strings[0]}, 709, {param_strings[1]}, {param_strings[2]}')
-        asm_file.write(f'\tadd r{var-1}, r{var-1}, r12\n')
+        asm_file.write(f'\tadd r5, r5, r12\n')
         asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self.func_cmb_flt_n(asm_file, 13, f'21, {param_strings[0]}, 743, {param_strings[1]}, {param_strings[2]}')
-        asm_file.write(f'\tadd r{var-1}, r{var-1}, r12\n')
+        asm_file.write(f'\tadd r5, r5, r12\n')
         asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self.func_cmb_flt_n(asm_file, 13, f'22, {param_strings[0]}, 787, {param_strings[1]}, {param_strings[2]}')
-        asm_file.write(f'\tadd r{var-1}, r{var-1}, r12\n')
+        asm_file.write(f'\tadd r5, r5, r12\n')
         asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self.func_cmb_flt_n(asm_file, 13, f'23, {param_strings[0]}, 809, {param_strings[1]}, {param_strings[2]}')
-        asm_file.write(f'\tadd r{var-1}, r{var-1}, r12\n')
+        asm_file.write(f'\tadd r{var-1}, r5, r12\n')
         asm_file.write(f'\tsub r9, r9, #2048*4*7\n')
 
         self.clamp(asm_file, var)
@@ -475,10 +470,7 @@ class AkpParser:
             asm_file.write(f'\tmov r12, #{resonance_C[0]}\n')
             asm_file.write(f'\tmul r14, r12, r14\n')
 
-        # self.sign_extend(asm_file, 4)
         asm_file.write(f'\tmov r12, r{val_V[0]-1}\n')
-        # self.sign_extend(asm_file, 12)
-
         asm_file.write(f'\tsub r12, r12, r4\n')
         asm_file.write(f'\tsub r5, r12, r14\n')
 
@@ -647,6 +639,13 @@ class AkpParser:
             asm_file.write(f'\tAK_PROGRESS\n\n')
             asm_file.write(f'Inst{inst_nr}Loop:\n')
 
+            if DEBUG_INSTRUMENT==inst_nr:
+                asm_file.write(f'\tmov r14, #{DEBUG_SAMPLE}\n')
+                asm_file.write(f'\tcmp r7, r14\n')
+                asm_file.write(f'\tbne .1\n')
+                asm_file.write(f'\tmov r7, r7\n')
+                asm_file.write(f'\t.1:\n')
+
             self._instance=0
             self._dvalue=0
 
@@ -705,8 +704,8 @@ class AkpParser:
             if self._dvalue > self._max_dvalues:
                 self._max_dvalues = self._dvalue
 
-            asm_file.write(f'\tmov r0, r0, asr #8\n')
-            asm_file.write(f'\tstrb r0, [r8], #1\n\n')
+            asm_file.write(f'\tmov r4, r0, asr #8\n')
+            asm_file.write(f'\tstrb r4, [r8], #1\n\n')
             asm_file.write(f'\tAK_FINE_PROGRESS\n\n')
             asm_file.write(f'\tadd r7, r7, #1\n')
             asm_file.write(f'\tldr r4, [r10, #AK_SMPLEN+4*{inst_nr-1}]\n')
@@ -725,7 +724,7 @@ class AkpParser:
                 asm_file.write(f'\tmov r0, r11, lsl #8\t; 32767<<8\n')
                 asm_file.write(f'\tmov r1, r7\n')
                 asm_file.write(f'\tbl divide\n')
-                asm_file.write(f'\tmov r5, r0, lsr #16\t; delta = divs.w(32767<<8,repeat_length)\n')
+                asm_file.write(f'\tmov r5, r0\t; delta = divs.w(32767<<8,repeat_length)\n')
                 asm_file.write(f'\tmov r14, #0\t; rampup\n')
                 asm_file.write(f'\tmov r12, r11, lsl #8\t; rampdown\n')
                 asm_file.write(f"LoopGen_{inst_nr-1}:\n")
