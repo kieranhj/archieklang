@@ -1,0 +1,175 @@
+1910, 3708, 3656, 4112, 2318, 5748, 4008, 5436
+$ amigahub-hat, 1856, 1538, 318, N
+#
+v1 = imported_sample(smp,0);
+v1 = sv_flt_n(1, v1, 79, 127, 1);
+
+$ amigahub-hat2, 1856, 1758, 98, N
+#
+v1 = clone(smp,0, 336);
+v2 = enva(1, 4, 0, 127);
+v1 = mul(v1, v2);
+
+$ amigahub-hatopen, 9472, 9214, 258, N
+#
+v1 = imported_sample(smp,1);
+v1 = sv_flt_n(1, v1, 40, 127, 1);
+v1 = reverb(v1, 107, 13);
+
+$ amigahub-kick, 3656, 1828, 1828, N
+#
+v1 = imported_sample(smp,2);
+
+$ amigahub_hat+bell, 1296, 1278, 18, N
+#
+v1 = clone(smp,0, 0);
+v1 = cmb_flt_n(1, v1, 73, 96, 99);
+v1 = sv_flt_n(2, v1, 17, 0, 1);
+v1 = sv_flt_n(3, v1, 17, 0, 1);
+v2 = envd(4, 6, 0, 50);
+v1 = mul(v1, v2);
+
+$ amigahub-snare1, 4112, 2080, 2032, N
+#
+v1 = imported_sample(smp,3);
+
+$ amigahub-snare2, 4608, 2304, 2304, N
+#
+v1 = imported_sample(smp,4);
+v1 = reverb(v1, 82, 16);
+
+$ amigahub_snare3, 2260, 1554, 706, N
+#
+v1 = imported_sample(smp,4);
+v1 = sv_flt_n(1, v1, 37, 55, 2);
+
+$ amigahub_snare_attack, 512, 256, 256, N
+#
+v1 = imported_sample(smp,3);
+v1 = vol(v1, 70);
+
+$ amigahub_hat+bell+reverb, 7904, 3952, 3952, Y
+#
+v1 = clone(smp,4, 0);
+v1 = reverb(v1, 99, 24);
+
+$ amigahub_organ_lead, 29696, 14848, 14848, Y
+#
+v1 = imported_sample(smp,6);
+v2 = envd(1, 11, 0, 127);
+v1 = mul(v1, v2);
+v1 = reverb(v1, 126, 60);
+v2 = osc_sine(4, 900, 24);
+v1 = add(v1, v2);
+v2 = osc_sine(6, 1788, 16);
+v1 = add(v1, v2);
+v1 = vol(v1, 110);
+
+$ amigahub_chord1, 16384, 8192, 8192, Y
+#
+v1 = osc_sine(0, 4, 54);
+v1 = ctrl(v1);
+v1 = chordgen(2, 10, 3, 5, 10, v1);
+v2 = osc_tri(3, 450, 52);
+v1 = add(v1, v2);
+
+$ amigahub_chord2, 13824, 7560, 6264, Y
+#
+v1 = chordgen(0, 10, 3, 7, 10, 0);
+v2 = osc_tri(1, 337, 52);
+v1 = add(v1, v2);
+
+$ amigahub_chord3, 13440, 6720, 6720, Y
+#
+v1 = chordgen(0, 10, 3, 7, 8, 0);
+v2 = osc_tri(1, 360, 52);
+v1 = add(v1, v2);
+
+$ amigahub_chord4, 10496, 5248, 5248, Y
+#
+v1 = chordgen(0, 10, 2, 5, 10, 0);
+v2 = osc_tri(1, 400, 52);
+v1 = add(v1, v2);
+
+$ amigahub_kickbass, 7654, 7652, 2, N
+#
+v1 = clone(smp,3, 0);
+v1 = cmb_flt_n(1, v1, 450, 87, 127);
+
+$ amigahub_bass1, 6144, 3072, 3072, Y
+#
+v1 = osc_saw(0, 153, 96);
+v2 = osc_saw(1, 147, 83);
+v1 = add(v1, v2);
+v2 = osc_pulse(3, 150, 68, 63);
+v1 = add(v1, v2);
+
+$ amigahub_bass2, 6144, 3071, 3073, N
+#
+v1 = clone(smp,16, 0);
+v2 = envd(1, 12, 16, 127);
+v3 = mul(v2, 110);
+v1 = sv_flt_n(3, v1, v3, 16, 0);
+v1 = mul(v2, v1);
+v2 = osc_tri(5, 152, 110);
+v1 = add(v1, v2);
+
+$ amigahub_bass3, 6144, 3584, 2560, Y
+#
+v1 = clone(smp,16, 0);
+v2 = envd(1, 9, 22, 127);
+v3 = mul(v2, 110);
+v1 = sv_flt_n(3, v1, v3, 16, 0);
+v1 = mul(v2, v1);
+
+$ amigahub_bass4, 6144, 3584, 2560, Y
+#
+v1 = clone_reverse(smp,16, 0);
+v2 = envd(1, 6, 16, 127);
+v3 = mul(v2, 110);
+v1 = sv_flt_n(3, v1, v3, 16, 0);
+v1 = mul(v2, v1);
+
+$ amigahub_bass+hat, 6144, 3071, 3073, N
+#
+v1 = clone(smp,0, 0);
+v2 = clone(smp,17, 0);
+v1 = add(v2, v1);
+
+$ amigahub_vocal, 28434, 14216, 14218, Y
+#
+v1 = imported_sample(smp,5);
+v1 = reverb(v1, 118, 15);
+v1 = vol(v1, 138);
+
+$ amigahub_vocal2, 15616, 8698, 6918, Y
+#
+v1 = imported_sample(smp,7);
+v1 = reverb(v1, 112, 26);
+
+$ amigahub_tom, 6080, 6078, 2, N
+#
+v2 = envd(0, 19, 0, 7);
+v3 = envd(1, 15, 0, 127);
+v4 = envd(2, 15, 0, 127);
+v3 = mul(v3, v4);
+v1 = osc_sine(4, v2, 79);
+v2 = clone(smp,6, 0);
+v2 = sv_flt_n(6, v2, 20, 28, 1);
+v1 = add(v1, v2);
+v1 = mul(v1, v3);
+v1 = cmb_flt_n(9, v1, 267, 59, 127);
+v1 = sv_flt_n(10, v1, 24, 42, 1);
+
+$ amigahub_lead, 32802, 16400, 16402, Y
+#
+v1 = osc_saw(0, 1800, 63);
+v2 = osc_saw(1, 1810, 50);
+v1 = add(v1, v2);
+v2 = osc_pulse(3, 900, 64, v3);
+v1 = add(v1, v2);
+v2 = osc_sine(5, 3, 112);
+v3 = ctrl(v2);
+v1 = sv_flt_n(7, v1, v3, 46, 2);
+v1 = sv_flt_n(8, v1, 37, 127, 2);
+

@@ -226,7 +226,7 @@ class AkpParser:
         asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
 
         if duty_V is not None:
-            asm_file.write(f'\tsub r4, {duty_V[0]-1}, #63\n')
+            asm_file.write(f'\tsub r4, r{duty_V[0]-1}, #63\n')
             asm_file.write(f'\tmov r4, r4, asl #9\n')
         else:
             const=(duty_C[0]-63)<<9

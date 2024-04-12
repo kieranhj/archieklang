@@ -4,7 +4,7 @@
 
 .equ _DEBUG, 1
 
-.equ _VERIFY_SAMPLES, 0
+.equ _VERIFY_SAMPLES, 1
 .equ _PLAY_SONG, 1
 .equ _PLAY_REFERENCE_SAMPLES, (_PLAY_SONG && 0)
 .equ _SAVE_GEN_SAMPLES, 0
@@ -31,6 +31,9 @@ stack_base:
 generated_samples_p:
     .long Generated_Samples
 
+total_sample_size:
+    .long AK_SampleTotalBytes + 0xff
+
 main:
 	str lr, [sp, #-4]!
 
@@ -44,9 +47,8 @@ main:
     ; ============================================================================
 
     ldr r8, generated_samples_p
-    mov r9, #AK_SampleTotalBytes
+    ldr r9, total_sample_size
     add r9, r9, r8
-    add r9, r9, #0xff
     bic r9, r9, #0xff
     mov r10, #0
     bl AK_Generate
@@ -341,20 +343,20 @@ vs_msg:
 Reference_Samples:
 ;.incbin "basics/basics.mod.smp"
 .incbin "columbia/Virgill-colombia.mod.smp"
-;.incbin "columbia/Virgill-colombia-test.mod.smp"
+;.incbin "amigahub/Virgill-amigahub.mod.smp"
 .p2align 2
 .endif
 
 .p2align 8
 MOD_data:
 .incbin "columbia/Virgill-colombia.mod.trk"
-;.incbin "columbia/Virgill-colombia-test.mod.trk"
+;.incbin "amigahub/Virgill-amigahub.mod.trk"
 
 .if _PLAY_REFERENCE_SAMPLES
 Reference_Samples:
 ;.incbin "basics/basics.mod.smp"
 .incbin "columbia/Virgill-colombia.mod.smp"
-;.incbin "columbia/Virgill-colombia-test.mod.smp"
+;.incbin "amigahub/Virgill-amigahub.mod.smp"
 .p2align 2
 .endif
 
