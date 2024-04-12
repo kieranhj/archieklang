@@ -835,6 +835,8 @@ class AkpParser:
 
         asm_file.write('\n; ============================================================================\n\n')
 
+        asm_file.write(f'.equ AK_SampleTotalBytes,\t{total_length}\n')
+
         print(f'{total_length} total sample size.')
 
 
@@ -872,7 +874,6 @@ class AkpParser:
         asm_file.write('AK_Generate:\n')
         asm_file.write('\tstr lr, [sp, #-4]!\n\n')
 
-        asm_file.write(f'\t; TODO: Init Progress.\n\n')
         asm_file.write(f'\t; Create sample & external sample base addresses\n')
         asm_file.write(f'\tadr r5, AK_SmpLen\n')
         asm_file.write(f'\tadr r4, AK_SmpAddr\n')

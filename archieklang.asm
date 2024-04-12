@@ -3,11 +3,11 @@
 ; ============================================================================
 
 .equ _DEBUG, 1
-.equ LibDivide_UseRecipTable, 0
 
+.equ _VERIFY_SAMPLES, 0
 .equ _PLAY_SONG, 1
-.equ _PLAY_REFERENCE_SAMPLES, 0
-.equ _SAVE_GEN_SAMPLES, 1
+.equ _PLAY_REFERENCE_SAMPLES, (_PLAY_SONG && 0)
+.equ _SAVE_GEN_SAMPLES, 0
 
 .include "lib/swis.h.asm"
 
@@ -44,7 +44,10 @@ main:
     ; ============================================================================
 
     ldr r8, generated_samples_p
-    adr r9, Scratch_Space
+    mov r9, #AK_SampleTotalBytes
+    add r9, r9, r8
+    add r9, r9, #0xff
+    bic r9, r9, #0xff
     mov r10, #0
     bl AK_Generate
     ; R8=end of generated sample buffer.
@@ -68,6 +71,7 @@ main:
     swi OS_File
     .endif
 
+    .if _VERIFY_SAMPLES
     ; Verify samples..
     ldr r8, generated_samples_p
     adr r9, Reference_Samples
@@ -199,6 +203,7 @@ main:
     add r11, r11, #1
     cmp r11, #AK_MaxInstruments
     blt .1
+    .endif
 
     .if _PLAY_SONG
     adr r0, playing_msg
@@ -245,14 +250,27 @@ generating_msg:
     .byte "Generating samples",0
     .p2align 2
 
+total_msg:
+    .byte " bytes total!",13,10
+    .p2align 2
+
+.if _SAVE_GEN_SAMPLES
 saving_msg:
     .byte "Saving samples...",13,10,0
     .p2align 2
 
+save_filename:
+    .byte "gen_smp",0
+    .p2align 2
+.endif
+
+.if _PLAY_SONG
 playing_msg:
     .byte "Playing MOD...",13,10,0
     .p2align 2
+.endif
 
+.if _VERIFY_SAMPLES
 verifying_msg:
     .byte "Verifying ",0
     .p2align 2
@@ -288,14 +306,7 @@ mismatch_msg:
 vs_msg:
     .byte " ref:",0
     .p2align 2
-
-total_msg:
-    .byte " bytes total!",13,10
-    .p2align 2
-
-save_filename:
-    .byte "gen_smp",0
-    .p2align 2
+.endif
 
 ; ============================================================================
 ; Support routines.
@@ -326,11 +337,7 @@ save_filename:
 ; BSS.
 ; ============================================================================
 
-.p2align 8
-Scratch_Space:
-    .skip 65536
-
-.if !_PLAY_REFERENCE_SAMPLES
+.if !_PLAY_REFERENCE_SAMPLES && _VERIFY_SAMPLES
 Reference_Samples:
 ;.incbin "basics/basics.mod.smp"
 .incbin "columbia/Virgill-colombia.mod.smp"

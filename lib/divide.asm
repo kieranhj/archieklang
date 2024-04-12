@@ -2,35 +2,6 @@
 ; Division routines.
 ; ============================================================================
 
-; x = 0.0 to 256.0 [1 to 1<<8]
-; There are 1<<16 table entries so x<<(16-8) = x<<8
-; Table is 1<<24 / x<<8 = (1/x) << 16
-
-; If want x = 0.0 to 1024.0 [1 to 1<<10]
-; There are 1<<16 table entries so x<<(16-10) = x<<6
-; Then table is 1<<22 / x<<6 = (1/x) << 16
-
-; If want x = 0.0 to 1024.0 [1 to 1<<10]
-; There are 1<<12 table entries so x<<(12-10) = x<<2
-; Then table is 1<<(16+2) / x<<2 = (1/x) << 16
-
-; If want x = 0.0 to M [1 to 1<<m]
-; There are 1<<t table entries.
-; Shift for x, s=(t-m) so x<<(t-m) in the table.
-; If maths precision is 1<<p.
-; Then table is 1<<(p+s) / x<<s.
-
-; If want x = 0.0 to 1024.0 [m=10]
-; But only a small table, say 256 entries, i.e. t=8
-; Then shift s=(8-10) = -2. So x>>2 in the table.
-; Table is (1<<p+s) / x<<s = 1<<14 / x>>2
-
-
-.if LibDivide_UseRecipTable
-reciprocal_table_p:
-    .long reciprocal_table_no_adr
-.endif
-
 ; Divide R0 by R1
 ; Parameters:
 ;  R0=numerator  [s15.16]       ; (a<<16)
