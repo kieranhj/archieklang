@@ -9,14 +9,14 @@
 .include "../lib/swis.h.asm"
 
 .ifndef _WIMPSLOT
-.equ _WIMPSLOT, 400*1024           ; Assumed RAM - see !Run.txt
+.equ _WIMPSLOT, 600*1024           ; Assumed RAM - see !Run.txt
 .endif
 
 .org 0x8000
 
 main:
     mov r0, #_WIMPSLOT
-    mov r1, #0
+    mov r1, r0
     swi Wimp_SlotSize
 
     adr r0, message_text

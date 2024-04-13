@@ -9,6 +9,7 @@
 .equ _PLAY_REFERENCE_SAMPLES, (_PLAY_SONG && 0)
 .equ _SAVE_GEN_SAMPLES, 0
 .equ _EMBED_QTM, (_PLAY_SONG && 1)
+.equ _LOG_SAMPLES, 1
 
 .include "lib/swis.h.asm"
 
@@ -64,8 +65,6 @@ QtmEmbedded_Exit:
 .endif
 
 main:
-	str lr, [sp, #-4]!
-
     adr r0, generating_msg
     swi OS_WriteO
 
@@ -239,6 +238,27 @@ main:
     blt .1
     .endif
 
+    .if _LOG_SAMPLES
+    adr r0, logconv_msg
+    swi OS_WriteO
+
+    ldr r8, generated_samples_p
+    ldr r9, total_sample_size
+    add r9, r9, r8
+    .20:
+    ldrb r0, [r8]
+    mov r0, r0, asl #24
+    swi Sound_SoundLog
+    strb r0, [r8], #1
+    movs r1, r8, lsl #20            ; every 8k
+    swieq OS_WriteI+'.'
+    cmp r8, r9
+    blt .20
+
+    swi OS_WriteI+13
+    swi OS_WriteI+10
+    .endif
+
     .if _PLAY_SONG
     adr r0, playing_msg
     swi OS_WriteO
@@ -251,6 +271,12 @@ main:
 
     mov r0, #0
     adr r1, MOD_data
+
+    .if _LOG_SAMPLES
+    ldr r2, qtm4
+    str r2, [r1, #1080]
+    .endif
+
     QTMSWI QTM_Load
     QTMSWI QTM_Start
     .endif
@@ -319,6 +345,12 @@ playing_msg:
     .p2align 2
 .endif
 
+.if _LOG_SAMPLES
+logconv_msg:
+    .byte "Converting to log samples",0
+    .p2align 2
+.endif
+
 .if _VERIFY_SAMPLES
 verifying_msg:
     .byte "Verifying ",0
@@ -357,6 +389,11 @@ vs_msg:
     .p2align 2
 .endif
 
+.if _LOG_SAMPLES
+qtm4:
+    .byte "QTM4"
+.endif
+
 ; ============================================================================
 ; Support routines.
 ; ============================================================================
@@ -384,8 +421,13 @@ vs_msg:
 
 .if _EMBED_QTM
 QtmEmbedded_Base:
+.if _LOG_SAMPLES
+.incbin "lib/tinyQ149t2,ffa"
+.else
 .incbin "lib/tinyQTM149,ffa"
 .endif
+.endif
+.p2align 2
 
 ; ============================================================================
 ; BSS.
