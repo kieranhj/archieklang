@@ -8,14 +8,29 @@
 .equ _PLAY_SONG, 1
 .equ _PLAY_REFERENCE_SAMPLES, (_PLAY_SONG && 0)
 .equ _SAVE_GEN_SAMPLES, 0
+.equ _EMBED_QTM, (_PLAY_SONG && 1)
 
 .include "lib/swis.h.asm"
 
-.org 0x8000
+.if _EMBED_QTM
+.macro QTMSWI swi_no
+stmfd sp!, {r11,lr}
+mov r11, #\swi_no - QTM_SwiBase
+mov lr, pc
+ldr pc, QtmEmbedded_Swi
+ldmfd sp!, {r11,lr}
+.endm
+.else
+.macro QTMSWI swi_no
+swi \swi_no
+.endm
+.endif
 
 ; ============================================================================
 ; Stack
 ; ============================================================================
+
+.org 0x8000
 
 Start:
     adrl sp, stack_base
@@ -33,6 +48,20 @@ generated_samples_p:
 
 total_sample_size:
     .long AK_SampleTotalBytes + 0xff
+
+.if _EMBED_QTM
+QtmEmbedded_Init:
+    .long QtmEmbedded_Base + 52
+
+QtmEmbedded_Swi:
+    .long QtmEmbedded_Base + 56
+
+QtmEmbedded_Service:
+    .long QtmEmbedded_Base + 60
+
+QtmEmbedded_Exit:
+    .long QtmEmbedded_Base + 64
+.endif
 
 main:
 	str lr, [sp, #-4]!
@@ -214,10 +243,26 @@ main:
     adr r0, playing_msg
     swi OS_WriteO
 
+    .if _EMBED_QTM
+    adr lr, .10
+    ldr pc, QtmEmbedded_Init
+    .10:
+    .endif
+
     mov r0, #0
     adr r1, MOD_data
-    swi QTM_Load
-    swi QTM_Start
+    QTMSWI QTM_Load
+    QTMSWI QTM_Start
+    .endif
+
+    .if _EMBED_QTM
+    .11:
+  	swi OS_ReadEscapeState
+    bcc .11
+
+    adr lr, .12
+    ldr pc, QtmEmbedded_Exit
+    .12:
     .endif
 
 	swi OS_Exit
@@ -336,6 +381,11 @@ vs_msg:
 ; ============================================================================
 ; Data.
 ; ============================================================================
+
+.if _EMBED_QTM
+QtmEmbedded_Base:
+.incbin "lib/tinyQTM149,ffa"
+.endif
 
 ; ============================================================================
 ; BSS.
