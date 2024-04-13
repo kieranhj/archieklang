@@ -4,7 +4,7 @@
 
 .equ _DEBUG, 1
 
-.equ _VERIFY_SAMPLES, 1
+.equ _VERIFY_SAMPLES, 0
 .equ _PLAY_SONG, 1
 .equ _PLAY_REFERENCE_SAMPLES, (_PLAY_SONG && 0)
 .equ _SAVE_GEN_SAMPLES, 0
@@ -53,6 +53,9 @@ main:
     mov r10, #0
     bl AK_Generate
     ; R8=end of generated sample buffer.
+
+    swi OS_WriteI+13
+    swi OS_WriteI+10
 
     ldr r7, generated_samples_p
     sub r0, r8, r7
@@ -217,7 +220,6 @@ main:
     swi QTM_Start
     .endif
 
-	ldr pc, [sp], #4
 	swi OS_Exit
 
 ; R0=num
@@ -249,7 +251,7 @@ string_buffer:
 	.skip 16
 
 generating_msg:
-    .byte "Generating samples",0
+    .byte 13,10,"Generating samples",0
     .p2align 2
 
 total_msg:

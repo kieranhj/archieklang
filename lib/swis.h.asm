@@ -135,6 +135,10 @@
 .equ Font_SetPalette, 0x40093
 .equ Font_ScanString, 0x400a1
 
+.equ Wimp_SlotSize, 0x400EC
+
+.equ Sound_SoundLog,0x40181
+
 .equ QTM_SwiBase, 0x47E40
 .equ QTM_Load, 0x47E40
 .equ QTM_Start, 0x47E41
