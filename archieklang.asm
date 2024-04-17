@@ -2,14 +2,13 @@
 ; ArchieKlang test harness.
 ; ============================================================================
 
-.equ _DEBUG, 1
+.equ _VERIFY_SAMPLES,           0
+.equ _PLAY_SONG,                1
+.equ _SAVE_GEN_SAMPLES,         0
+.equ _EMBED_QTM,                (_PLAY_SONG && 1)
+.equ _LOG_SAMPLES,              1
 
-.equ _VERIFY_SAMPLES, 0
-.equ _PLAY_SONG, 1
-.equ _PLAY_REFERENCE_SAMPLES, (_PLAY_SONG && 0)
-.equ _SAVE_GEN_SAMPLES, 0
-.equ _EMBED_QTM, (_PLAY_SONG && 1)
-.equ _LOG_SAMPLES, 1
+.equ AK_CLEAR_FIRST_2_BYTES,    1
 
 .include "lib/swis.h.asm"
 
@@ -92,6 +91,10 @@ main:
     adr r0, total_msg
     swi OS_WriteO
 
+    ; ============================================================================
+    ; Save generated samples.
+    ; ============================================================================
+
     .if _SAVE_GEN_SAMPLES
     adr r0, saving_msg
     swi OS_WriteO
@@ -103,6 +106,10 @@ main:
     mov r5, r8                      ; end address of data
     swi OS_File
     .endif
+
+    ; ============================================================================
+    ; Verify generated samples.
+    ; ============================================================================
 
     .if _VERIFY_SAMPLES
     ; Verify samples..
@@ -141,7 +148,13 @@ main:
 
     mov r12, #0         ; max error
     mov r5, #0          ; num errors
+    .if AK_CLEAR_FIRST_2_BYTES
+    mov r6, #2
+    add r8, r8, #2
+    add r9, r9, #2
+    .else
     mov r6, #0          ; sample idx
+    .endif
 .3:
     ldrb r3, [r8], #1
     ldrb r4, [r9], #1
@@ -238,6 +251,10 @@ main:
     blt .1
     .endif
 
+    ; ============================================================================
+    ; Convert samples to log.
+    ; ============================================================================
+
     .if _LOG_SAMPLES
     adr r0, logconv_msg
     swi OS_WriteO
@@ -258,6 +275,10 @@ main:
     swi OS_WriteI+13
     swi OS_WriteI+10
     .endif
+
+    ; ============================================================================
+    ; Play the MOD.
+    ; ============================================================================
 
     .if _PLAY_SONG
     adr r0, playing_msg
@@ -293,6 +314,10 @@ main:
 
 	swi OS_Exit
 
+; ============================================================================
+; Text strings and helpers.
+; ============================================================================
+
 ; R0=num
 write_num:
 	adr r1, string_buffer
@@ -302,6 +327,7 @@ write_num:
 	swi OS_WriteO
     mov pc, lr
 
+.if _VERIFY_SAMPLES
 write_hex:
 	adr r1, string_buffer
 	mov r2, #16
@@ -317,6 +343,7 @@ write_hex8:
 	adr r0, string_buffer
 	swi OS_WriteO
     mov pc, lr
+.endif
 
 string_buffer:
 	.skip 16
@@ -411,9 +438,7 @@ qtm4:
 .macro AK_FINE_PROGRESS
 .endm
 
-.equ AK_CLEAR_FIRST_2_BYTES, 0
-
-.include "build/arcmusic.asm"
+.include "arcmusic.asm"
 
 ; ============================================================================
 ; Data.
@@ -421,11 +446,11 @@ qtm4:
 
 .if _EMBED_QTM
 QtmEmbedded_Base:
-.if _LOG_SAMPLES
-.incbin "lib/tinyQ149t2,ffa"
-.else
-.incbin "lib/tinyQTM149,ffa"
-.endif
+    .if _LOG_SAMPLES
+    .incbin "lib/tinyQ149t2,ffa"
+    .else
+    .incbin "lib/tinyQTM149,ffa"
+    .endif
 .endif
 .p2align 2
 
@@ -433,25 +458,14 @@ QtmEmbedded_Base:
 ; BSS.
 ; ============================================================================
 
-.if !_PLAY_REFERENCE_SAMPLES && _VERIFY_SAMPLES
+.if _VERIFY_SAMPLES
 Reference_Samples:
-;.incbin "basics/basics.mod.smp"
-.incbin "columbia/Virgill-colombia.mod.smp"
-;.incbin "amigahub/Virgill-amigahub.mod.smp"
+.incbin "music.mod.smp"
 .p2align 2
 .endif
 
 .p2align 8
 MOD_data:
-.incbin "columbia/Virgill-colombia.mod.trk"
-;.incbin "amigahub/Virgill-amigahub.mod.trk"
-
-.if _PLAY_REFERENCE_SAMPLES
-Reference_Samples:
-;.incbin "basics/basics.mod.smp"
-.incbin "columbia/Virgill-colombia.mod.smp"
-;.incbin "amigahub/Virgill-amigahub.mod.smp"
-.p2align 2
-.endif
+.incbin "music.mod.trk"
 
 Generated_Samples:

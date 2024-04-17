@@ -37,8 +37,10 @@ class AkpParser:
                 asm_file.write(f'\t; r{var-1} = vol(v{gain_V[0]})\n')
             else:
                 asm_file.write(f'\t; v{var} = vol(v{gain_V[0]})\n')
-            asm_file.write(f'\tmul r{var-1}, r{gain_V[0]-1}, r{var-1}\n')
+            asm_file.write(f'\tand r14, r{gain_V[0]-1}, #0xff\n')
+            asm_file.write(f'\tmul r{var-1}, r14, r{var-1}\n')
             asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #7\n')
+            self.sign_extend(asm_file, var-1)
         else:
             if var>4:
                 asm_file.write(f'\t; r{var-1} = vol({gain_C[0]})\n')
@@ -78,9 +80,12 @@ class AkpParser:
             self.sign_extend(asm_file, params_V[1]-1)
             asm_file.write(f'\tadd r{var-1}, r{params_V[0]-1}, r{params_V[1]-1}\n')
         else:
-            # TODO: Constant array?
             self.sign_extend(asm_file, params_C[0]-1)
-            asm_file.write(f'\tadd r{var-1}, r{params_C[0]-1}, #{params_C[1]}\n')
+            if params_C[1]<0:
+                asm_file.write(f'\tmvn r{var-1}, #{-params_C[1]-1}\n')
+            else:
+                asm_file.write(f'\tmov r{var-1}, #{params_C[1]}\n')
+            asm_file.write(f'\tadd r{var-1}, r{params_C[0]-1}, r{var-1}\n')
 
         self.clamp(asm_file, var)
 
@@ -515,16 +520,15 @@ class AkpParser:
 
         asm_file.write(f'\tldr r5, [r10, #AK_OPINSTANCE+4*({self._instance}+{chord_var})]\n')
 
-        asm_file.write(f'\tcmp r5, r12, lsl #8+{mult_shift}\n')
-        asm_file.write(f'\tldrltb r14, [r4, r5, lsr #8+{mult_shift}]\n')
-        asm_file.write(f'\tmovge r14, #0\n')
-        # asm_file.write(f'\tldrb r14, [r4, r5, lsr #8+{mult_shift}]\n')
+        asm_file.write(f'\tldrb r14, [r4, r5, lsr #{8+mult_shift}]\n')
+        asm_file.write(f'\tcmp r12, r5, lsr #{8+mult_shift}\n')
+        asm_file.write(f'\tmovlt r14, #0\n')
 
-        asm_file.write(f'\tadd r5, r5, #{mult_val}<<8;{mult_shift}\n')
+        asm_file.write(f'\tadd r5, r5, #{mult_val<<8}\n')
         asm_file.write(f'\tstr r5, [r10, #AK_OPINSTANCE+4*({self._instance}+{chord_var})]\n')
 
         asm_file.write(f'\tmov r14, r14, asl #24\n')
-        asm_file.write(f'\tadd r6, r6, r14, asr #24-7\n')
+        asm_file.write(f'\tadd r6, r6, r14, asr #{24-7}\n')
 
     def func_chordgen(self, asm_file, var, param_string):
         param_strings=parse("{:d}, {:d}, {:d}, {:d}, {:d}, {}", param_string)
@@ -541,7 +545,7 @@ class AkpParser:
         
         asm_file.write(f'\tldrb r6, [r4, r7]\n')
         asm_file.write(f'\tmov r6, r6, asl #24\n')
-        asm_file.write(f'\tmov r6, r6, asr #24-7\n')
+        asm_file.write(f'\tmov r6, r6, asr #{24-7}\n')
 
         if shift_V is not None:
             asm_file.write(f'\tadd r4, r4, r{shift_V[0]-1}\n')
@@ -583,8 +587,11 @@ class AkpParser:
         
         while self._num_instruments < 32:
             def_line=self._akp_file.readline()
-            #print(def_line)
-            inst_def=parse("$ {name:S}, {len:d}, {rep_off:d}, {rep_len:d}, {loop:S}\n", def_line)
+            name_delimiter=def_line.find(",")
+            name_string=def_line[2:name_delimiter]
+            inst_string=def_line[name_delimiter+1:]
+            # inst_def=parse("$ {name:S}, {len:d}, {rep_off:d}, {rep_len:d}, {loop:S}\n", def_line)
+            inst_def=parse("{len:d}, {rep_off:d}, {rep_len:d}, {loop:S}\n", inst_string)
 
             if inst_def is None:
                 break
@@ -608,7 +615,7 @@ class AkpParser:
                 break
 
         inst_nr=0
-        self._max_instances=10      # TODO: Make cmd line option.
+        self._max_instances=0
         self._max_dvalues=0
 
         self._instruments=[]
@@ -616,7 +623,11 @@ class AkpParser:
         while inst_nr < 32:
             def_line=self._akp_file.readline()
             #print(def_line)
-            inst_def=parse("$ {name:S}, {len:d}, {rep_off:d}, {rep_len:d}, {loop:S}\n", def_line)
+            name_delimiter=def_line.find(",")
+            name_string=def_line[2:name_delimiter]
+            inst_string=def_line[name_delimiter+1:]
+            # inst_def=parse("$ {name:S}, {len:d}, {rep_off:d}, {rep_len:d}, {loop:S}\n", def_line)
+            inst_def=parse("{len:d}, {rep_off:d}, {rep_len:d}, {loop:S}\n", inst_string)
 
             if inst_def is None:
                 break
@@ -625,10 +636,10 @@ class AkpParser:
 
             self._instruments.append([inst_def['len']])
        
-            print(f"Instrument {inst_nr} '{inst_def['name']}'")
+            print(f"Instrument {inst_nr} '{name_string}'")  #{inst_def['name']}'")
 
             asm_file.write(f';----------------------------------------------------------------------------\n')
-            asm_file.write(f"; Instrument {inst_nr} - {inst_def['name']}\n")
+            asm_file.write(f"; Instrument {inst_nr} - '{name_string}'\n") # inst_def['name']}\n")
             asm_file.write(f';----------------------------------------------------------------------------\n\n')
 
             self._akp_file.readline()       # swallow hash line
@@ -699,7 +710,6 @@ class AkpParser:
 
             if self._instance > self._max_instances:
                 self._max_instances = self._instance
-                print(f'WARNING: Exceeded maximum of {self._max_instances} OpInstance vars!')
 
             if self._dvalue > self._max_dvalues:
                 self._max_dvalues = self._dvalue
@@ -959,6 +969,6 @@ if __name__ == '__main__':
     parser.WriteInstruments(asm_file)
     parser.WriteVars(asm_file)
 
-    print(f'Wrote {asm_file.tell()} bytes of ASM.\n')
+    print(f"Wrote {asm_file.tell()} bytes of ASM to '{dst}'.\n")
 
     asm_file.close()

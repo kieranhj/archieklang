@@ -7,3 +7,14 @@ E.g. in Chord Gen there is a shift (offset) value - this can easily go off the e
 
 - Looks like a small precision error with LoopGen vs C code?
   Trying to lerp but from 0x7fff to 0x0.
+
+
+TODO:
+- Implement remaining nodes
+- Implement external samples
+- Test all example MODs
+- Implement 16-bit linear to 8-bit log conversion.
+- Smaller code implementation w/ parameterised fn calls rather than inline.
+- Tidy up documentation
+- Replacement aklang2asm.bat for Archie
+- Contact Virgill
