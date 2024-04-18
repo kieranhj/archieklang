@@ -7,6 +7,7 @@
 .equ _SAVE_GEN_SAMPLES,         0
 .equ _EMBED_QTM,                (_PLAY_SONG && 1)
 .equ _LOG_SAMPLES,              1
+.equ _EXTERNAL_SAMPLES,         1
 
 .equ AK_CLEAR_FIRST_2_BYTES,    1
 
@@ -47,7 +48,12 @@ generated_samples_p:
     .long Generated_Samples
 
 total_sample_size:
-    .long AK_SampleTotalBytes + 0xff
+    .long AK_SMP_LEN
+
+.if _EXTERNAL_SAMPLES
+external_samples_p:
+    .long External_Samples
+.endif
 
 .if _EMBED_QTM
 QtmEmbedded_Init:
@@ -75,9 +81,14 @@ main:
 
     ldr r8, generated_samples_p
     ldr r9, total_sample_size
+    add r9, r9, #0xff
     add r9, r9, r8
     bic r9, r9, #0xff
+    .if _EXTERNAL_SAMPLES
+    ldr r10, external_samples_p
+    .else
     mov r10, #0
+    .endif
     bl AK_Generate
     ; R8=end of generated sample buffer.
 
@@ -460,12 +471,18 @@ QtmEmbedded_Base:
 
 .if _VERIFY_SAMPLES
 Reference_Samples:
-.incbin "music.mod.smp"
+.incbin "build/music.mod.smp"
 .p2align 2
+.endif
+
+.if _EXTERNAL_SAMPLES
+.p2align 2
+External_Samples:
+.incbin "build/Isamp.raw"
 .endif
 
 .p2align 8
 MOD_data:
-.incbin "music.mod.trk"
+.incbin "build/music.mod.trk"
 
 Generated_Samples:

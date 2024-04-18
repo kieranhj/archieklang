@@ -17,18 +17,24 @@ if %ERRORLEVEL% neq 0 (
 	exit /b 1
 )
 
-ren "%1\%2.smp" music.mod.smp
-ren "%1\%2.trk" music.mod.trk
+del build\music.mod.smp
+del build\music.mod.trk
+move "%1\%2.smp" build
+move "%1\%2.trk" build
+ren "build\%2.smp" music.mod.smp
+ren "build\%2.trk" music.mod.trk
 
 if EXIST %1\script.txt (
 echo Generating code...
 python bin\akp2arc.py %1\script.txt -o %1\arcmusic.asm
 
-if %ERRORLEVEL% neq 1 (
+if %ERRORLEVEL% neq 0 (
 	echo Failed to generate ArchieKlang code.
 	exit /b 1
 )
 )
+
+copy "%1\Isamp.raw" build
 
 echo Assembling code...
 bin\vasmarm_std_win32.exe -L build\compile.txt -m250 -Fbin -I%1 -opt-adr -o build\archieklang.bin archieklang.asm

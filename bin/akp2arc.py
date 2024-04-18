@@ -7,7 +7,7 @@ import os
 import struct
 from parse import *
 
-DEBUG_INSTRUMENT=0
+DEBUG_INSTRUMENT=20
 DEBUG_SAMPLE=0
 
 DECAY_TABLE = [32767, 32767, 32767, 16384, 10922, 8192, 6553, 4681, 3640, 2978, 2520, 2048, 1724, 1489, 1310, 1129, 992, 885, 799, 712, 642, 585, 537, 489, 448, 414, 385, 356, 330, 309, 289, 270, 254, 239, 225, 212, 201, 190, 181, 171, 163, 155, 148, 141, 134, 129, 123, 118, 113, 108, 104, 100, 96, 93, 89, 86, 83, 80, 77, 75, 72, 70, 68, 65, 63, 61, 60, 58, 56, 54, 53, 51, 50, 49, 47, 46, 45, 44, 43, 41, 40, 39, 38, 38, 37, 36, 35, 34, 33, 33, 32, 31, 30, 30, 29, 29, 28, 27, 27, 26, 26, 25, 25, 24, 24, 23, 23, 22, 22, 22, 21, 21, 20, 20, 20, 19, 19, 19, 18, 18, 18, 17, 17, 17, 17, 16, 16, 16]
@@ -31,21 +31,21 @@ class AkpParser:
         asm_file.write(f'\tcmn r{var-1}, r11\t\t; #-32768\n')
         asm_file.write(f'\tmvnlt r{var-1}, r11\t; #-32768\n')
 
-    def vol(self, asm_file, var, gain_V, gain_C):
+    def vol_var(self, asm_file, dst_var, src_var, gain_V, gain_C):
         if gain_V is not None:
-            if var>4:
-                asm_file.write(f'\t; r{var-1} = vol(v{gain_V[0]})\n')
+            if dst_var>4:
+                asm_file.write(f'\t; r{dst_var-1} = vol(r{src_var-1}, v{gain_V[0]})\n')
             else:
-                asm_file.write(f'\t; v{var} = vol(v{gain_V[0]})\n')
+                asm_file.write(f'\t; v{dst_var} = vol(v{src_var}, v{gain_V[0]})\n')
             asm_file.write(f'\tand r14, r{gain_V[0]-1}, #0xff\n')
-            asm_file.write(f'\tmul r{var-1}, r14, r{var-1}\n')
-            asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #7\n')
-            self.sign_extend(asm_file, var-1)
+            asm_file.write(f'\tmul r{dst_var-1}, r14, r{src_var-1}\n')
+            asm_file.write(f'\tmov r{dst_var-1}, r{dst_var-1}, asr #7\n')
+            self.sign_extend(asm_file, dst_var-1)
         else:
-            if var>4:
-                asm_file.write(f'\t; r{var-1} = vol({gain_C[0]})\n')
+            if dst_var>4:
+                asm_file.write(f'\t; r{dst_var-1} = vol(r{src_var-1}, {gain_C[0]})\n')
             else:
-                asm_file.write(f'\t; v{var} = vol({gain_C[0]})\n')
+                asm_file.write(f'\t; v{dst_var} = vol(v{src_var}, {gain_C[0]})\n')
 
             shift_val=gain_C[0]
             shift_bit=shift_val & (shift_val-1)
@@ -61,15 +61,17 @@ class AkpParser:
                 if shift_left==0:
                     asm_file.write(f'\t; NOOP -- val<<{shift_left+7}>>7\n')
                 elif shift_left<0:
-                    asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #{-shift_left}\t; val<<{shift_left+7}>>7\n')
+                    asm_file.write(f'\tmov r{dst_var-1}, r{src_var-1}, asr #{-shift_left}\t; val<<{shift_left+7}>>7\n')
                 else:
-                    asm_file.write(f'\tmov r{var-1}, r{var-1}, asl #{shift_left}\t; val<<{shift_left+7}>>7\n')
+                    asm_file.write(f'\tmov r{dst_var-1}, r{src_var-1}, asl #{shift_left}\t; val<<{shift_left+7}>>7\n')
 
             else:
                 asm_file.write(f'\tmov r14, #{gain_C[0]}\n')
-                asm_file.write(f'\tmul r{var-1}, r14, r{var-1}\n')
+                asm_file.write(f'\tmul r{dst_var-1}, r14, r{src_var-1}\n')
+                asm_file.write(f'\tmov r{dst_var-1}, r{dst_var-1}, asr #7\n')
 
-                asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #7\n')
+    def vol(self, asm_file, var, gain_V, gain_C):
+        self.vol_var(asm_file, var, var, gain_V, gain_C)
 
     def func_add(self, asm_file, var, param_string):
         params_V=parse("v{:d}, v{:d}", param_string)
@@ -88,6 +90,12 @@ class AkpParser:
             asm_file.write(f'\tadd r{var-1}, r{params_C[0]-1}, r{var-1}\n')
 
         self.clamp(asm_file, var)
+
+    def func_vol(self, asm_file, var, param_string):
+        vol_params=parse("v{:d}, {:S}", param_string)
+        gain_V=parse("v{:d}", vol_params[1])
+        gain_C=parse("{:d}", vol_params[1])
+        self.vol_var(asm_file, var, vol_params[0], gain_V, gain_C)
 
     def func_mul(self, asm_file, var, param_string):
         params_V=parse("v{:d}, v{:d}", param_string)
@@ -319,6 +327,20 @@ class AkpParser:
         asm_file.write(f'\tmov r{var-1}, r{var-1}, asl #24\n')
         asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #16\n')
 
+    def func_imported_sample(self, asm_file, var, param_string):
+        params=parse("{},{:d}", param_string)
+        if params[0] != 'smp':
+            print('WARNING: Expected "smp"?')
+
+        asm_file.write(f'\tmov r{var-1}, r7\n')
+        asm_file.write(f'\tldr r6, [r10, #AK_EXTSMPADDR+4*{params[1]}]\n')
+        asm_file.write(f'\tldr r4, [r10, #AK_EXTSMPLEN+4*{params[1]}]\n')
+        asm_file.write(f'\tcmp r{var-1}, r4\n')
+        asm_file.write(f'\tmovge r{var-1}, #0\n')
+        asm_file.write(f'\tldrltb r{var-1}, [r6, r{var-1}]\n')
+        asm_file.write(f'\tmov r{var-1}, r{var-1}, asl #24\n')
+        asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #16\n')
+
     def func_clone_reverse(self, asm_file, var, param_string):
         params=parse("{},{:d}, {:d}", param_string)
         if params[0] != 'smp':
@@ -330,11 +352,12 @@ class AkpParser:
             asm_file.write(f'\tmov r{var-1}, r7\n')
             
         asm_file.write(f'\tldr r6, [r10, #AK_SMPADDR+4*({params[1]}+1)]\n')
-        asm_file.write(f'\tadd r6, r6, #1\n')
+        # asm_file.write(f'\tsub r6, r6, #1\n') # ARGH! CAN'T GET REVERSE RIGHT!!
         asm_file.write(f'\tldr r4, [r10, #AK_SMPLEN+4*{params[1]}]\n')
         asm_file.write(f'\tcmp r{var-1}, r4\n')
         asm_file.write(f'\tmovge r{var-1}, #0\n')
-        asm_file.write(f'\tmvnlt r{var-1}, r{var-1}\n')
+        # asm_file.write(f'\tmvnlt r{var-1}, r{var-1}\n')
+        asm_file.write(f'\trsblt r{var-1}, r{var-1}, #0\n')
         asm_file.write(f'\tldrltb r{var-1}, [r6, r{var-1}]\n')
         asm_file.write(f'\tmov r{var-1}, r{var-1}, asl #24\n')
         asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #16\n')
@@ -582,7 +605,10 @@ class AkpParser:
         
         if self._extsample_lens is None:
             print('WARNING: Failed to parse external sample length values.')
+        else:
+            self._total_ext_smp_len=self._extsample_lens[0]+self._extsample_lens[1]+self._extsample_lens[2]+self._extsample_lens[3]+self._extsample_lens[4]+self._extsample_lens[5]+self._extsample_lens[6]+self._extsample_lens[7]
 
+        self._total_smp_len=0
         self._num_instruments=0
         
         while self._num_instruments < 32:
@@ -597,6 +623,7 @@ class AkpParser:
                 break
 
             self._num_instruments+=1
+            self._total_smp_len+=inst_def['len']
 
             self._akp_file.readline()       # swallow hash line
 
@@ -654,7 +681,7 @@ class AkpParser:
                 asm_file.write(f'\tmov r14, #{DEBUG_SAMPLE}\n')
                 asm_file.write(f'\tcmp r7, r14\n')
                 asm_file.write(f'\tbne .1\n')
-                asm_file.write(f'\tmov r7, r7\n')
+                asm_file.write(f'\tmov r7, r7\t; BREAK HERE!\n')
                 asm_file.write(f'\t.1:\n')
 
             self._instance=0
@@ -702,6 +729,10 @@ class AkpParser:
                     self.func_chordgen(asm_file, cmd_def[0], cmd_def[2])
                 elif cmd_def[1]=='reverb':
                     self.func_reverb(asm_file, cmd_def[0], cmd_def[2])
+                elif cmd_def[1]=='imported_sample':
+                    self.func_imported_sample(asm_file, cmd_def[0], cmd_def[2])
+                elif cmd_def[1]=='vol':
+                    self.func_vol(asm_file, cmd_def[0], cmd_def[2])
                 else:
                     print(f"WARNING: Unimplemented node command '{cmd_def[1]}'")
                     asm_file.write(f"; TODO: Implement node command '{cmd_def[1]}'.\n")
@@ -774,8 +805,10 @@ class AkpParser:
 
 
         print(f'{inst_nr} total instruments.')
-
         assert(inst_nr==self._num_instruments)
+
+        print(f'{self._total_smp_len} total sample size.')
+        print(f'{self._total_ext_smp_len} external sample size.')
 
         asm_file.write('; ============================================================================\n\n')
 
@@ -827,11 +860,9 @@ class AkpParser:
 
         asm_file.write('AK_Vars:\n')
         asm_file.write('AK_SmpLen:\n')
-        total_length=0
         i=1
         for inst in self._instruments:
             asm_file.write(f'\t.long 0x{inst[0]:08x}\t; Instrument {i} Length\n')
-            total_length+=inst[0]
             i+=1
 
         for i in range(len(self._instruments),32):
@@ -856,11 +887,7 @@ class AkpParser:
         asm_file.write('AK_EnvDValue:\n\t; NB. Must follow AK_OpInstance!\n')
         asm_file.write(f'\t.skip {self._max_dvalues}*4\n')
 
-        asm_file.write('\n; ============================================================================\n\n')
-
-        asm_file.write(f'.equ AK_SampleTotalBytes,\t{total_length}\n')
-
-        print(f'{total_length} total sample size.')
+        asm_file.write('\n; ============================================================================\n')
 
 
     def WriteHeader(self, asm_file):
@@ -889,6 +916,9 @@ class AkpParser:
         asm_file.write('.equ AK_OPINSTANCE,\t\t(AK_OpInstance-AK_Vars)\n')
         asm_file.write('.equ AK_ENVDVALUE,\t\t(AK_EnvDValue-AK_Vars)\n\n')
 
+        asm_file.write(f'.equ AK_SMP_LEN,\t\t{self._total_smp_len}\n')
+        asm_file.write(f'.equ AK_EXT_SMP_LEN,\t{self._total_ext_smp_len}\n\n')
+
         asm_file.write('; ============================================================================\n')
         asm_file.write('; r8 = Sample Buffer Start Address\n')
         asm_file.write('; r9 = 32768 Bytes Temporary Work Buffer Address (can be freed after sample rendering complete)\n')
@@ -898,8 +928,8 @@ class AkpParser:
         asm_file.write('\tstr lr, [sp, #-4]!\n\n')
 
         asm_file.write(f'\t; Create sample & external sample base addresses\n')
-        asm_file.write(f'\tadr r5, AK_SmpLen\n')
         asm_file.write(f'\tadr r4, AK_SmpAddr\n')
+        asm_file.write(f'\tadr r5, AK_SmpLen\n')
         asm_file.write(f'\tmov r7, #AK_MaxInstruments\n')
         asm_file.write(f'\tmov r0, r8\n')
         asm_file.write(f'SmpAdrLoop:\n')
@@ -909,6 +939,8 @@ class AkpParser:
         asm_file.write(f'\tsubs r7, r7, #1\n')
         asm_file.write(f'\tbne SmpAdrLoop\n')
         asm_file.write(f'\tmov r7, #AK_MaxExtSamples\n')
+        asm_file.write(f'\tadr r4, AK_ExtSmpAddr\n')
+        asm_file.write(f'\tadr r5, AK_ExtSmpLen\n')
         asm_file.write(f'\tmov r0, r10\n')
         asm_file.write(f'ExSmpAdrLoop:\n')
         asm_file.write(f'\tstr r0, [r4], #4\n')
@@ -916,6 +948,23 @@ class AkpParser:
         asm_file.write(f'\tadd r0, r0, r1\n')
         asm_file.write(f'\tsubs r7, r7, #1\n')
         asm_file.write(f'\tbne ExSmpAdrLoop\n\n')
+
+        asm_file.write(f'.if _EXTERNAL_SAMPLES\n')
+        asm_file.write(f'\t; Convert external samples from stored deltas\n')
+        asm_file.write(f'\tmov r7, #AK_EXT_SMP_LEN\n')
+        asm_file.write(f'\tmov r6, r10\n')
+        asm_file.write(f'\tmov r0, #0\n')
+        asm_file.write(f'DeltaLoop:\n')
+        asm_file.write(f'\tldrb r1, [r6]\n')
+        asm_file.write(f'\tmov r1, r1, asl #24\n')
+        asm_file.write(f'\tmov r1, r1, asr #24\n')
+        asm_file.write(f'\tadd r0, r0, r1\n')
+        asm_file.write(f'\tmov r0, r0, asl #24\n')
+        asm_file.write(f'\tmov r0, r0, asr #24\n')
+        asm_file.write(f'\tstrb r0, [r6], #1\n')
+        asm_file.write(f'\tsubs r7, r7, #1\n')
+        asm_file.write(f'\tbne DeltaLoop\n')
+        asm_file.write(f'.endif\n\n')
 
         asm_file.write('; ============================================================================\n')
         asm_file.write('; r0 = v1 (final sample value)\n')
