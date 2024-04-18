@@ -22,6 +22,9 @@
 .equ AK_OPINSTANCE,		(AK_OpInstance-AK_Vars)
 .equ AK_ENVDVALUE,		(AK_EnvDValue-AK_Vars)
 
+.equ AK_SMP_LEN,		148510
+.equ AK_EXT_SMP_LEN,	0
+
 ; ============================================================================
 ; r8 = Sample Buffer Start Address
 ; r9 = 32768 Bytes Temporary Work Buffer Address (can be freed after sample rendering complete)
@@ -32,8 +35,8 @@ AK_Generate:
 	str lr, [sp, #-4]!
 
 	; Create sample & external sample base addresses
-	adr r5, AK_SmpLen
 	adr r4, AK_SmpAddr
+	adr r5, AK_SmpLen
 	mov r7, #AK_MaxInstruments
 	mov r0, r8
 SmpAdrLoop:
@@ -43,6 +46,8 @@ SmpAdrLoop:
 	subs r7, r7, #1
 	bne SmpAdrLoop
 	mov r7, #AK_MaxExtSamples
+	adr r4, AK_ExtSmpAddr
+	adr r5, AK_ExtSmpLen
 	mov r0, r10
 ExSmpAdrLoop:
 	str r0, [r4], #4
@@ -50,6 +55,23 @@ ExSmpAdrLoop:
 	add r0, r0, r1
 	subs r7, r7, #1
 	bne ExSmpAdrLoop
+
+.if _EXTERNAL_SAMPLES
+	; Convert external samples from stored deltas
+	mov r7, #AK_EXT_SMP_LEN
+	mov r6, r10
+	mov r0, #0
+DeltaLoop:
+	ldrb r1, [r6]
+	mov r1, r1, asl #24
+	mov r1, r1, asr #24
+	add r0, r0, r1
+	mov r0, r0, asl #24
+	mov r0, r0, asr #24
+	strb r0, [r6], #1
+	subs r7, r7, #1
+	bne DeltaLoop
+.endif
 
 ; ============================================================================
 ; r0 = v1 (final sample value)
@@ -87,7 +109,7 @@ Inst1Loop:
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
 	str r0, [r10, #AK_OPINSTANCE+4*0]	
-	; v1 = vol(127)
+	; v1 = vol(v1, 127)
 	mov r14, #127
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -98,7 +120,7 @@ Inst1Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -145,7 +167,7 @@ Inst1Loop:
 	; v1 = reverb(v1, 85, 53);
 	ldr r6, [r10, #AK_OPINSTANCE+4*4]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(85)
+	; r4 = vol(r4, 85)
 	mov r14, #85
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -163,7 +185,7 @@ Inst1Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*4]
-	; r12 = vol(53)
+	; r12 = vol(r12, 53)
 	mov r14, #53
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -171,7 +193,7 @@ Inst1Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*5]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(85)
+	; r4 = vol(r4, 85)
 	mov r14, #85
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -189,7 +211,7 @@ Inst1Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*5]
-	; r12 = vol(53)
+	; r12 = vol(r12, 53)
 	mov r14, #53
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -197,7 +219,7 @@ Inst1Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*6]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(85)
+	; r4 = vol(r4, 85)
 	mov r14, #85
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -215,7 +237,7 @@ Inst1Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*6]
-	; r12 = vol(53)
+	; r12 = vol(r12, 53)
 	mov r14, #53
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -223,7 +245,7 @@ Inst1Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*7]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(85)
+	; r4 = vol(r4, 85)
 	mov r14, #85
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -241,7 +263,7 @@ Inst1Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*7]
-	; r12 = vol(53)
+	; r12 = vol(r12, 53)
 	mov r14, #53
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -249,7 +271,7 @@ Inst1Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*8]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(85)
+	; r4 = vol(r4, 85)
 	mov r14, #85
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -267,7 +289,7 @@ Inst1Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*8]
-	; r12 = vol(53)
+	; r12 = vol(r12, 53)
 	mov r14, #53
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -275,7 +297,7 @@ Inst1Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*9]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(85)
+	; r4 = vol(r4, 85)
 	mov r14, #85
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -293,7 +315,7 @@ Inst1Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*9]
-	; r12 = vol(53)
+	; r12 = vol(r12, 53)
 	mov r14, #53
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -301,7 +323,7 @@ Inst1Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*10]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(85)
+	; r4 = vol(r4, 85)
 	mov r14, #85
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -319,7 +341,7 @@ Inst1Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*10]
-	; r12 = vol(53)
+	; r12 = vol(r12, 53)
 	mov r14, #53
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -327,7 +349,7 @@ Inst1Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*11]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(85)
+	; r4 = vol(r4, 85)
 	mov r14, #85
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -345,7 +367,7 @@ Inst1Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*11]
-	; r12 = vol(53)
+	; r12 = vol(r12, 53)
 	mov r14, #53
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -363,7 +385,7 @@ Inst1Loop:
 	mov r2, r2, asl #16
 	mov r2, r2, asr #16	; Sign extend word to long.
 	str r2, [r10, #AK_OPINSTANCE+4*12]	
-	; v3 = vol(11)
+	; v3 = vol(v3, 11)
 	mov r14, #11
 	mul r2, r14, r2
 	mov r2, r2, asr #7
@@ -381,7 +403,7 @@ Inst1Loop:
 	mul r4, r6, r4
 	mov r4, r4, asr #16
 	mov r1, r4, asl #3
-	; v2 = vol(26)
+	; v2 = vol(v2, 26)
 	mov r14, #26
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -495,24 +517,24 @@ Inst2Loop:
 	add r4, r4, #0
 	sub r12, r12, #0
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #82432
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #98048
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
-	ldrb r14, [r4, r5, lsr #8]
 	cmp r12, r5, lsr #8
+	ldrgeb r14, [r4, r5, lsr #8]
 	movlt r14, #0
 	add r5, r5, #512
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
@@ -531,7 +553,7 @@ Inst2Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -569,24 +591,24 @@ Inst3Loop:
 	add r4, r4, #0
 	sub r12, r12, #0
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #77824
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #87552
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
-	ldrb r14, [r4, r5, lsr #15]
 	cmp r12, r5, lsr #15
+	ldrgeb r14, [r4, r5, lsr #15]
 	movlt r14, #0
 	add r5, r5, #51968
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
@@ -605,7 +627,7 @@ Inst3Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -647,7 +669,7 @@ Inst4Loop:
 	mul r4, r6, r4
 	mov r4, r4, asr #16
 	mov r0, r4, asl #3
-	; v1 = vol(127)
+	; v1 = vol(v1, 127)
 	mov r14, #127
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -658,7 +680,7 @@ Inst4Loop:
 	mov r1, r1, asl #16
 	mov r1, r1, asr #16	; Sign extend word to long.
 	str r1, [r10, #AK_OPINSTANCE+4*1]	
-	; v2 = vol(98)
+	; v2 = vol(v2, 98)
 	mov r14, #98
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -676,7 +698,7 @@ Inst4Loop:
 	mul r4, r6, r4
 	mov r4, r4, asr #16
 	mov r2, r4, asl #3
-	; v3 = vol(110)
+	; v3 = vol(v3, 110)
 	mov r14, #110
 	mul r2, r14, r2
 	mov r2, r2, asr #7
@@ -743,7 +765,7 @@ Inst4Loop:
 	; v1 = reverb(v1, 24, 59);
 	ldr r6, [r10, #AK_OPINSTANCE+4*6]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(24)
+	; r4 = vol(r4, 24)
 	mov r14, #24
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -761,7 +783,7 @@ Inst4Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*6]
-	; r12 = vol(59)
+	; r12 = vol(r12, 59)
 	mov r14, #59
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -769,7 +791,7 @@ Inst4Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*7]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(24)
+	; r4 = vol(r4, 24)
 	mov r14, #24
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -787,7 +809,7 @@ Inst4Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*7]
-	; r12 = vol(59)
+	; r12 = vol(r12, 59)
 	mov r14, #59
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -795,7 +817,7 @@ Inst4Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*8]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(24)
+	; r4 = vol(r4, 24)
 	mov r14, #24
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -813,7 +835,7 @@ Inst4Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*8]
-	; r12 = vol(59)
+	; r12 = vol(r12, 59)
 	mov r14, #59
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -821,7 +843,7 @@ Inst4Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*9]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(24)
+	; r4 = vol(r4, 24)
 	mov r14, #24
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -839,7 +861,7 @@ Inst4Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*9]
-	; r12 = vol(59)
+	; r12 = vol(r12, 59)
 	mov r14, #59
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -847,7 +869,7 @@ Inst4Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*10]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(24)
+	; r4 = vol(r4, 24)
 	mov r14, #24
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -865,7 +887,7 @@ Inst4Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*10]
-	; r12 = vol(59)
+	; r12 = vol(r12, 59)
 	mov r14, #59
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -873,7 +895,7 @@ Inst4Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*11]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(24)
+	; r4 = vol(r4, 24)
 	mov r14, #24
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -891,7 +913,7 @@ Inst4Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*11]
-	; r12 = vol(59)
+	; r12 = vol(r12, 59)
 	mov r14, #59
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -899,7 +921,7 @@ Inst4Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*12]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(24)
+	; r4 = vol(r4, 24)
 	mov r14, #24
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -917,7 +939,7 @@ Inst4Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*12]
-	; r12 = vol(59)
+	; r12 = vol(r12, 59)
 	mov r14, #59
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -925,7 +947,7 @@ Inst4Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*13]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(24)
+	; r4 = vol(r4, 24)
 	mov r14, #24
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -943,7 +965,7 @@ Inst4Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*13]
-	; r12 = vol(59)
+	; r12 = vol(r12, 59)
 	mov r14, #59
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -1017,24 +1039,24 @@ Inst5Loop:
 	add r4, r4, #0
 	sub r12, r12, #0
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #82432
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #98048
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
-	ldrb r14, [r4, r5, lsr #15]
 	cmp r12, r5, lsr #15
+	ldrgeb r14, [r4, r5, lsr #15]
 	movlt r14, #0
 	add r5, r5, #58368
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
@@ -1053,7 +1075,7 @@ Inst5Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1125,24 +1147,24 @@ Inst6Loop:
 	add r4, r4, #0
 	sub r12, r12, #0
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #77824
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #87552
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
-	ldrb r14, [r4, r5, lsr #15]
 	cmp r12, r5, lsr #15
+	ldrgeb r14, [r4, r5, lsr #15]
 	movlt r14, #0
 	add r5, r5, #51968
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
@@ -1161,7 +1183,7 @@ Inst6Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1233,24 +1255,24 @@ Inst7Loop:
 	add r4, r4, #0
 	sub r12, r12, #0
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #77824
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #87552
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
-	ldrb r14, [r4, r5, lsr #15]
 	cmp r12, r5, lsr #15
+	ldrgeb r14, [r4, r5, lsr #15]
 	movlt r14, #0
 	add r5, r5, #58368
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
@@ -1269,7 +1291,7 @@ Inst7Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1338,7 +1360,7 @@ Inst8Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1361,7 +1383,7 @@ Inst8Loop:
 	mul r4, r6, r4
 	mov r4, r4, asr #16
 	mov r0, r4, asl #3
-	; v1 = vol(127)
+	; v1 = vol(v1, 127)
 	mov r14, #127
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -1372,7 +1394,7 @@ Inst8Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1386,7 +1408,7 @@ Inst8Loop:
 	mov r2, r2, asl #16
 	mov r2, r2, asr #16	; Sign extend word to long.
 	str r2, [r10, #AK_OPINSTANCE+4*1]	
-	; v3 = vol(v2)
+	; v3 = vol(v3, v2)
 	and r14, r1, #0xff
 	mul r2, r14, r2
 	mov r2, r2, asr #7
@@ -1431,7 +1453,7 @@ Inst9Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(101)
+	; v2 = vol(v2, 101)
 	mov r14, #101
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1453,7 +1475,7 @@ Inst9Loop:
 	str r6, [r10, #AK_NOISESEEDS+4]
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
-	; v1 = vol(v2)
+	; v1 = vol(v1, v2)
 	and r14, r1, #0xff
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -1521,7 +1543,7 @@ Inst10Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(60)
+	; v2 = vol(v2, 60)
 	mov r14, #60
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1541,7 +1563,7 @@ Inst10Loop:
 	str r6, [r10, #AK_NOISESEEDS+4]
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
-	; v1 = vol(v2)
+	; v1 = vol(v1, v2)
 	and r14, r1, #0xff
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -1610,7 +1632,7 @@ Inst11Loop:
 	cmp r6, #4096
 	movle r6, #4096
 	mov r2, r6
-	; v3 = vol(127)
+	; v3 = vol(v3, 127)
 	mov r14, #127
 	mul r2, r14, r2
 	mov r2, r2, asr #7
@@ -1625,7 +1647,7 @@ Inst11Loop:
 	cmp r6, #2560
 	movle r6, #2560
 	mov r3, r6
-	; v4 = vol(127)
+	; v4 = vol(v4, 127)
 	mov r14, #127
 	mul r3, r14, r3
 	mov r3, r3, asr #7
@@ -1636,7 +1658,7 @@ Inst11Loop:
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
 	str r0, [r10, #AK_OPINSTANCE+4*0]	
-	; v1 = vol(v3)
+	; v1 = vol(v1, v3)
 	and r14, r2, #0xff
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -1790,7 +1812,7 @@ Inst13Loop:
 	mul r4, r6, r4
 	mov r4, r4, asr #16
 	mov r0, r4, asl #3
-	; v1 = vol(127)
+	; v1 = vol(v1, 127)
 	mov r14, #127
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -1808,7 +1830,7 @@ Inst13Loop:
 	mul r4, r6, r4
 	mov r4, r4, asr #16
 	mov r1, r4, asl #3
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1820,7 +1842,7 @@ Inst13Loop:
 	; v1 = cmb_flt_n(3, v1, v2, 72, 94);
 	ldr r6, [r10, #AK_OPINSTANCE+4*2]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(72)
+	; r4 = vol(r4, 72)
 	mov r14, #72
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -1837,7 +1859,7 @@ Inst13Loop:
 	cmp r6, r1
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*2]
-	; v1 = vol(94)
+	; v1 = vol(v1, 94)
 	mov r14, #94
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -1848,7 +1870,7 @@ Inst13Loop:
 	mov r1, r1, asl #16
 	mov r1, r1, asr #16	; Sign extend word to long.
 	str r1, [r10, #AK_OPINSTANCE+4*3]	
-	; v2 = vol(85)
+	; v2 = vol(v2, 85)
 	mov r14, #85
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1927,24 +1949,24 @@ Inst14Loop:
 	add r4, r4, #127
 	sub r12, r12, #127
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #82432
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #98048
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
-	ldrb r14, [r4, r5, lsr #15]
 	cmp r12, r5, lsr #15
+	ldrgeb r14, [r4, r5, lsr #15]
 	movlt r14, #0
 	add r5, r5, #58368
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
@@ -1965,7 +1987,7 @@ Inst14Loop:
 	cmp r6, r11, asl #8
 	movgt r6, r11, asl #8
 	str r6, [r10, #AK_OPINSTANCE+4*3]
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1977,7 +1999,7 @@ Inst14Loop:
 	; v1 = reverb(v1, 6, 23);
 	ldr r6, [r10, #AK_OPINSTANCE+4*4]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -1995,7 +2017,7 @@ Inst14Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*4]
-	; r12 = vol(23)
+	; r12 = vol(r12, 23)
 	mov r14, #23
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2003,7 +2025,7 @@ Inst14Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*5]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2021,7 +2043,7 @@ Inst14Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*5]
-	; r12 = vol(23)
+	; r12 = vol(r12, 23)
 	mov r14, #23
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2029,7 +2051,7 @@ Inst14Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*6]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2047,7 +2069,7 @@ Inst14Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*6]
-	; r12 = vol(23)
+	; r12 = vol(r12, 23)
 	mov r14, #23
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2055,7 +2077,7 @@ Inst14Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*7]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2073,7 +2095,7 @@ Inst14Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*7]
-	; r12 = vol(23)
+	; r12 = vol(r12, 23)
 	mov r14, #23
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2081,7 +2103,7 @@ Inst14Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*8]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2099,7 +2121,7 @@ Inst14Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*8]
-	; r12 = vol(23)
+	; r12 = vol(r12, 23)
 	mov r14, #23
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2107,7 +2129,7 @@ Inst14Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*9]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2125,7 +2147,7 @@ Inst14Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*9]
-	; r12 = vol(23)
+	; r12 = vol(r12, 23)
 	mov r14, #23
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2133,7 +2155,7 @@ Inst14Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*10]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2151,7 +2173,7 @@ Inst14Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*10]
-	; r12 = vol(23)
+	; r12 = vol(r12, 23)
 	mov r14, #23
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2159,7 +2181,7 @@ Inst14Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*11]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2177,7 +2199,7 @@ Inst14Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*11]
-	; r12 = vol(23)
+	; r12 = vol(r12, 23)
 	mov r14, #23
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2286,24 +2308,24 @@ Inst15Loop:
 	add r4, r4, #116
 	sub r12, r12, #116
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #77824
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #87552
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
-	ldrb r14, [r4, r5, lsr #15]
 	cmp r12, r5, lsr #15
+	ldrgeb r14, [r4, r5, lsr #15]
 	movlt r14, #0
 	add r5, r5, #51968
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
@@ -2324,7 +2346,7 @@ Inst15Loop:
 	cmp r6, r11, asl #8
 	movgt r6, r11, asl #8
 	str r6, [r10, #AK_OPINSTANCE+4*3]
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -2336,7 +2358,7 @@ Inst15Loop:
 	; v1 = reverb(v1, 6, 27);
 	ldr r6, [r10, #AK_OPINSTANCE+4*4]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2354,7 +2376,7 @@ Inst15Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*4]
-	; r12 = vol(27)
+	; r12 = vol(r12, 27)
 	mov r14, #27
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2362,7 +2384,7 @@ Inst15Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*5]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2380,7 +2402,7 @@ Inst15Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*5]
-	; r12 = vol(27)
+	; r12 = vol(r12, 27)
 	mov r14, #27
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2388,7 +2410,7 @@ Inst15Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*6]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2406,7 +2428,7 @@ Inst15Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*6]
-	; r12 = vol(27)
+	; r12 = vol(r12, 27)
 	mov r14, #27
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2414,7 +2436,7 @@ Inst15Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*7]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2432,7 +2454,7 @@ Inst15Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*7]
-	; r12 = vol(27)
+	; r12 = vol(r12, 27)
 	mov r14, #27
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2440,7 +2462,7 @@ Inst15Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*8]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2458,7 +2480,7 @@ Inst15Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*8]
-	; r12 = vol(27)
+	; r12 = vol(r12, 27)
 	mov r14, #27
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2466,7 +2488,7 @@ Inst15Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*9]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2484,7 +2506,7 @@ Inst15Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*9]
-	; r12 = vol(27)
+	; r12 = vol(r12, 27)
 	mov r14, #27
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2492,7 +2514,7 @@ Inst15Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*10]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2510,7 +2532,7 @@ Inst15Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*10]
-	; r12 = vol(27)
+	; r12 = vol(r12, 27)
 	mov r14, #27
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2518,7 +2540,7 @@ Inst15Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*11]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2536,7 +2558,7 @@ Inst15Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*11]
-	; r12 = vol(27)
+	; r12 = vol(r12, 27)
 	mov r14, #27
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2645,24 +2667,24 @@ Inst16Loop:
 	add r4, r4, #116
 	sub r12, r12, #116
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #82432
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #98048
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
-	ldrb r14, [r4, r5, lsr #8]
 	cmp r12, r5, lsr #8
+	ldrgeb r14, [r4, r5, lsr #8]
 	movlt r14, #0
 	add r5, r5, #512
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
@@ -2683,7 +2705,7 @@ Inst16Loop:
 	cmp r6, r11, asl #8
 	movgt r6, r11, asl #8
 	str r6, [r10, #AK_OPINSTANCE+4*3]
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -2695,7 +2717,7 @@ Inst16Loop:
 	; v1 = reverb(v1, 6, 29);
 	ldr r6, [r10, #AK_OPINSTANCE+4*4]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2713,7 +2735,7 @@ Inst16Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*4]
-	; r12 = vol(29)
+	; r12 = vol(r12, 29)
 	mov r14, #29
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2721,7 +2743,7 @@ Inst16Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*5]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2739,7 +2761,7 @@ Inst16Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*5]
-	; r12 = vol(29)
+	; r12 = vol(r12, 29)
 	mov r14, #29
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2747,7 +2769,7 @@ Inst16Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*6]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2765,7 +2787,7 @@ Inst16Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*6]
-	; r12 = vol(29)
+	; r12 = vol(r12, 29)
 	mov r14, #29
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2773,7 +2795,7 @@ Inst16Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*7]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2791,7 +2813,7 @@ Inst16Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*7]
-	; r12 = vol(29)
+	; r12 = vol(r12, 29)
 	mov r14, #29
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2799,7 +2821,7 @@ Inst16Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*8]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2817,7 +2839,7 @@ Inst16Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*8]
-	; r12 = vol(29)
+	; r12 = vol(r12, 29)
 	mov r14, #29
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2825,7 +2847,7 @@ Inst16Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*9]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2843,7 +2865,7 @@ Inst16Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*9]
-	; r12 = vol(29)
+	; r12 = vol(r12, 29)
 	mov r14, #29
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2851,7 +2873,7 @@ Inst16Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*10]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2869,7 +2891,7 @@ Inst16Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*10]
-	; r12 = vol(29)
+	; r12 = vol(r12, 29)
 	mov r14, #29
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -2877,7 +2899,7 @@ Inst16Loop:
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*11]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(6)
+	; r4 = vol(r4, 6)
 	mov r14, #6
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2895,7 +2917,7 @@ Inst16Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*11]
-	; r12 = vol(29)
+	; r12 = vol(r12, 29)
 	mov r14, #29
 	mul r12, r14, r12
 	mov r12, r12, asr #7
@@ -3001,7 +3023,7 @@ Inst17Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -3012,7 +3034,7 @@ Inst17Loop:
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
 	str r0, [r10, #AK_OPINSTANCE+4*0]	
-	; v1 = vol(127)
+	; v1 = vol(v1, 127)
 	mov r14, #127
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -3085,7 +3107,7 @@ Inst18Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -3096,7 +3118,7 @@ Inst18Loop:
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
 	str r0, [r10, #AK_OPINSTANCE+4*0]	
-	; v1 = vol(127)
+	; v1 = vol(v1, 127)
 	mov r14, #127
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -3169,7 +3191,7 @@ Inst19Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -3180,7 +3202,7 @@ Inst19Loop:
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
 	str r0, [r10, #AK_OPINSTANCE+4*0]	
-	; v1 = vol(127)
+	; v1 = vol(v1, 127)
 	mov r14, #127
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -3253,7 +3275,7 @@ Inst20Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -3267,7 +3289,7 @@ Inst20Loop:
 	mov r2, r2, asl #16
 	mov r2, r2, asr #16	; Sign extend word to long.
 	str r2, [r10, #AK_OPINSTANCE+4*0]	
-	; v3 = vol(127)
+	; v3 = vol(v3, 127)
 	mov r14, #127
 	mul r2, r14, r2
 	mov r2, r2, asr #7
@@ -3278,7 +3300,7 @@ Inst20Loop:
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
 	str r0, [r10, #AK_OPINSTANCE+4*1]	
-	; v1 = vol(127)
+	; v1 = vol(v1, 127)
 	mov r14, #127
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -3301,7 +3323,7 @@ Inst20Loop:
 	mov r2, r2, asl #16
 	mov r2, r2, asr #16	; Sign extend word to long.
 	str r2, [r10, #AK_OPINSTANCE+4*2]	
-	; v3 = vol(127)
+	; v3 = vol(v3, 127)
 	mov r14, #127
 	mul r2, r14, r2
 	mov r2, r2, asr #7
@@ -3417,7 +3439,7 @@ Inst21Loop:
 	mul r4, r6, r4
 	mov r4, r4, asr #16
 	mov r0, r4, asl #3
-	; v1 = vol(127)
+	; v1 = vol(v1, 127)
 	mov r14, #127
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -3435,7 +3457,7 @@ Inst21Loop:
 	mul r4, r6, r4
 	mov r4, r4, asr #16
 	mov r1, r4, asl #3
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -3447,7 +3469,7 @@ Inst21Loop:
 	; v1 = cmb_flt_n(4, v1, v2, 33, 127);
 	ldr r6, [r10, #AK_OPINSTANCE+4*2]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(33)
+	; r4 = vol(r4, 33)
 	mov r14, #33
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -3464,7 +3486,7 @@ Inst21Loop:
 	cmp r6, r1
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*2]
-	; v1 = vol(127)
+	; v1 = vol(v1, 127)
 	mov r14, #127
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -3475,7 +3497,7 @@ Inst21Loop:
 	mov r1, r1, asl #16
 	mov r1, r1, asr #16	; Sign extend word to long.
 	str r1, [r10, #AK_OPINSTANCE+4*3]	
-	; v2 = vol(85)
+	; v2 = vol(v2, 85)
 	mov r14, #85
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -3671,5 +3693,3 @@ AK_EnvDValue:
 	.skip 0*4
 
 ; ============================================================================
-
-.equ AK_SampleTotalBytes,	148510

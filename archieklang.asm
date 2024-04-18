@@ -2,12 +2,12 @@
 ; ArchieKlang test harness.
 ; ============================================================================
 
-.equ _VERIFY_SAMPLES,           0
+.equ _VERIFY_SAMPLES,           1
 .equ _PLAY_SONG,                1
 .equ _SAVE_GEN_SAMPLES,         0
 .equ _EMBED_QTM,                (_PLAY_SONG && 1)
-.equ _LOG_SAMPLES,              1
-.equ _EXTERNAL_SAMPLES,         1
+.equ _LOG_SAMPLES,              0
+.equ _EXTERNAL_SAMPLES,         0
 
 .equ AK_CLEAR_FIRST_2_BYTES,    1
 
