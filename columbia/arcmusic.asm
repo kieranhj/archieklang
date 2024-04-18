@@ -22,6 +22,9 @@
 .equ AK_OPINSTANCE,		(AK_OpInstance-AK_Vars)
 .equ AK_ENVDVALUE,		(AK_EnvDValue-AK_Vars)
 
+.equ AK_SMP_LEN,		155040
+.equ AK_EXT_SMP_LEN,	0
+
 ; ============================================================================
 ; r8 = Sample Buffer Start Address
 ; r9 = 32768 Bytes Temporary Work Buffer Address (can be freed after sample rendering complete)
@@ -32,8 +35,8 @@ AK_Generate:
 	str lr, [sp, #-4]!
 
 	; Create sample & external sample base addresses
-	adr r5, AK_SmpLen
 	adr r4, AK_SmpAddr
+	adr r5, AK_SmpLen
 	mov r7, #AK_MaxInstruments
 	mov r0, r8
 SmpAdrLoop:
@@ -43,6 +46,8 @@ SmpAdrLoop:
 	subs r7, r7, #1
 	bne SmpAdrLoop
 	mov r7, #AK_MaxExtSamples
+	adr r4, AK_ExtSmpAddr
+	adr r5, AK_ExtSmpLen
 	mov r0, r10
 ExSmpAdrLoop:
 	str r0, [r4], #4
@@ -50,6 +55,23 @@ ExSmpAdrLoop:
 	add r0, r0, r1
 	subs r7, r7, #1
 	bne ExSmpAdrLoop
+
+.if _EXTERNAL_SAMPLES
+	; Convert external samples from stored deltas
+	mov r7, #AK_EXT_SMP_LEN
+	mov r6, r10
+	mov r0, #0
+DeltaLoop:
+	ldrb r1, [r6]
+	mov r1, r1, asl #24
+	mov r1, r1, asr #24
+	add r0, r0, r1
+	mov r0, r0, asl #24
+	mov r0, r0, asr #24
+	strb r0, [r6], #1
+	subs r7, r7, #1
+	bne DeltaLoop
+.endif
 
 ; ============================================================================
 ; r0 = v1 (final sample value)
@@ -72,7 +94,7 @@ ExSmpAdrLoop:
 	mov r11, #32767	; const
 
 ;----------------------------------------------------------------------------
-; Instrument 1 - colombia_kick
+; Instrument 1 - 'colombia_kick'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -87,7 +109,7 @@ Inst1Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -98,7 +120,8 @@ Inst1Loop:
 	; v3 = add(v3, -300);
 	mov r2, r2, asl #16
 	mov r2, r2, asr #16	; Sign extend word to long.
-	add r2, r2, #-300
+	mvn r14, #299
+	add r2, r2, r14
 	; v3 = clamp(v3)
 	cmp r2, r11		; #32767
 	movgt r2, r11	; #32767
@@ -118,7 +141,7 @@ Inst1Loop:
 	mul r4, r6, r4
 	mov r4, r4, asr #16
 	mov r0, r4, asl #3
-	; v1 = vol(128)
+	; v1 = vol(v1, 128)
 	; NOOP -- val<<7>>7
 
 	; v1 = mul(v1, v2);
@@ -131,7 +154,7 @@ Inst1Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(128)
+	; v2 = vol(v2, 128)
 	; NOOP -- val<<7>>7
 
 	; v3 = osc_saw(6, 2304, 128);
@@ -140,7 +163,7 @@ Inst1Loop:
 	mov r2, r2, asl #16
 	mov r2, r2, asr #16	; Sign extend word to long.
 	str r2, [r10, #AK_OPINSTANCE+4*1]	
-	; v3 = vol(128)
+	; v3 = vol(v3, 128)
 	; NOOP -- val<<7>>7
 
 	; v3 = mul(v2, v3);
@@ -170,7 +193,7 @@ AK_FINE_PROGRESS
 	blt Inst1Loop
 
 ;----------------------------------------------------------------------------
-; Instrument 2 - colombia_snare
+; Instrument 2 - 'colombia_snare'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -186,7 +209,7 @@ Inst2Loop:
 	cmp r6, #2048
 	movle r6, #2048
 	mov r2, r6
-	; v3 = vol(128)
+	; v3 = vol(v3, 128)
 	; NOOP -- val<<7>>7
 
 	; v4 = envd(1, 9, 24, 128);
@@ -196,7 +219,7 @@ Inst2Loop:
 	cmp r6, #6144
 	movle r6, #6144
 	mov r3, r6
-	; v4 = vol(128)
+	; v4 = vol(v4, 128)
 	; NOOP -- val<<7>>7
 
 	; v1 = osc_saw(2, v2, 128);
@@ -205,7 +228,7 @@ Inst2Loop:
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
 	str r0, [r10, #AK_OPINSTANCE+4*0]	
-	; v1 = vol(128)
+	; v1 = vol(v1, 128)
 	; NOOP -- val<<7>>7
 
 	; v1 = mul(v1, v3);
@@ -250,7 +273,7 @@ Inst2Loop:
 	; v3 = cmb_flt_n(5, v1, 256, 64, 48);
 	ldr r6, [r10, #AK_OPINSTANCE+4*4]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(64)
+	; r4 = vol(r4, 64)
 	mov r4, r4, asr #1	; val<<6>>7
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
@@ -266,7 +289,7 @@ Inst2Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*4]
-	; v3 = vol(48)
+	; v3 = vol(v3, 48)
 	mov r14, #48
 	mul r2, r14, r2
 	mov r2, r2, asr #7
@@ -274,7 +297,8 @@ Inst2Loop:
 	; v2 = add(v1, 23269);
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
-	add r1, r0, #23269
+	mov r14, #23269
+	add r1, r0, r14
 	; v2 = clamp(v2)
 	cmp r1, r11		; #32767
 	movgt r1, r11	; #32767
@@ -346,7 +370,7 @@ LoopGen_1:
 	bne LoopGen_1
 
 ;----------------------------------------------------------------------------
-; Instrument 3 - colombia_kick+snare
+; Instrument 3 - 'colombia_kick+snare'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -398,7 +422,7 @@ AK_FINE_PROGRESS
 	blt Inst3Loop
 
 ;----------------------------------------------------------------------------
-; Instrument 4 - colombia_openhat
+; Instrument 4 - 'colombia_openhat'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -463,7 +487,7 @@ AK_FINE_PROGRESS
 	blt Inst4Loop
 
 ;----------------------------------------------------------------------------
-; Instrument 5 - colombia_closedhat
+; Instrument 5 - 'colombia_closedhat'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -479,7 +503,7 @@ Inst5Loop:
 	cmp r6, #6144
 	movle r6, #6144
 	mov r1, r6
-	; v2 = vol(128)
+	; v2 = vol(v2, 128)
 	; NOOP -- val<<7>>7
 
 	; v1 = clone(smp,3, 1044);
@@ -507,7 +531,7 @@ AK_FINE_PROGRESS
 	blt Inst5Loop
 
 ;----------------------------------------------------------------------------
-; Instrument 6 - colombia_kick+hat
+; Instrument 6 - 'colombia_kick+hat'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -559,7 +583,7 @@ AK_FINE_PROGRESS
 	blt Inst6Loop
 
 ;----------------------------------------------------------------------------
-; Instrument 7 - colombia_ghostsnare
+; Instrument 7 - 'colombia_ghostsnare'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -575,7 +599,7 @@ Inst7Loop:
 	cmp r6, #6144
 	movle r6, #6144
 	mov r1, r6
-	; v2 = vol(100)
+	; v2 = vol(v2, 100)
 	mov r14, #100
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -605,7 +629,7 @@ AK_FINE_PROGRESS
 	blt Inst7Loop
 
 ;----------------------------------------------------------------------------
-; Instrument 8 - colombia_reversekick
+; Instrument 8 - 'colombia_reversekick'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -617,11 +641,10 @@ Inst8Loop:
 	; v1 = clone_reverse(smp,0, 0);
 	mov r0, r7
 	ldr r6, [r10, #AK_SMPADDR+4*(0+1)]
-	add r6, r6, #1
 	ldr r4, [r10, #AK_SMPLEN+4*0]
 	cmp r0, r4
 	movge r0, #0
-	mvnlt r0, r0
+	rsblt r0, r0, #0
 	ldrltb r0, [r6, r0]
 	mov r0, r0, asl #24
 	mov r0, r0, asr #16
@@ -637,7 +660,7 @@ AK_FINE_PROGRESS
 	blt Inst8Loop
 
 ;----------------------------------------------------------------------------
-; Instrument 9 - colombia_reversesnare
+; Instrument 9 - 'colombia_reversesnare'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -649,11 +672,10 @@ Inst9Loop:
 	; v1 = clone_reverse(smp,1, 4096);
 	add r0, r7, #4096
 	ldr r6, [r10, #AK_SMPADDR+4*(1+1)]
-	add r6, r6, #1
 	ldr r4, [r10, #AK_SMPLEN+4*1]
 	cmp r0, r4
 	movge r0, #0
-	mvnlt r0, r0
+	rsblt r0, r0, #0
 	ldrltb r0, [r6, r0]
 	mov r0, r0, asl #24
 	mov r0, r0, asr #16
@@ -669,7 +691,7 @@ AK_FINE_PROGRESS
 	blt Inst9Loop
 
 ;----------------------------------------------------------------------------
-; Instrument 10 - colombia_superbass
+; Instrument 10 - 'colombia_superbass'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -691,7 +713,7 @@ Inst10Loop:
 	mul r4, r6, r4
 	mov r4, r4, asr #16
 	mov r1, r4, asl #3
-	; v2 = vol(120)
+	; v2 = vol(v2, 120)
 	mov r14, #120
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -706,7 +728,7 @@ Inst10Loop:
 	mvnmi r6, r6
 	sub r6, r6, #16384
 	mov r2, r6, asl #1
-	; v3 = vol(120)
+	; v3 = vol(v3, 120)
 	mov r14, #120
 	mul r2, r14, r2
 	mov r2, r2, asr #7
@@ -727,9 +749,12 @@ Inst10Loop:
 	cmp r6, r4
 	mvnlt r0, r11	; #-32768
 	movge r0, r11	; #32767
-	; v1 = vol(v2)
-	mul r0, r1, r0
+	; v1 = vol(v1, v2)
+	and r14, r1, #0xff
+	mul r0, r14, r0
 	mov r0, r0, asr #7
+	mov r0, r0, asl #16
+	mov r0, r0, asr #16	; Sign extend word to long.
 
 	; v4 = mul(v2, -32768);
 	mvn r14, #32767
@@ -739,7 +764,8 @@ Inst10Loop:
 	; v4 = add(v4, 127);
 	mov r3, r3, asl #16
 	mov r3, r3, asr #16	; Sign extend word to long.
-	add r3, r3, #127
+	mov r14, #127
+	add r3, r3, r14
 	; v4 = clamp(v4)
 	cmp r3, r11		; #32767
 	movgt r3, r11	; #32767
@@ -785,7 +811,7 @@ Inst10Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r3, r6
-	; v4 = vol(128)
+	; v4 = vol(v4, 128)
 	; NOOP -- val<<7>>7
 
 	; v1 = mul(v1, v4);
@@ -799,7 +825,7 @@ Inst10Loop:
 	cmp r6, #3072
 	movle r6, #3072
 	mov r1, r6
-	; v2 = vol(128)
+	; v2 = vol(v2, 128)
 	; NOOP -- val<<7>>7
 
 	; v2 = mul(v2, 128);
@@ -894,7 +920,7 @@ LoopGen_9:
 	bne LoopGen_9
 
 ;----------------------------------------------------------------------------
-; Instrument 11 - colombia_superbass_high
+; Instrument 11 - 'colombia_superbass_high'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -916,7 +942,7 @@ Inst11Loop:
 	mul r4, r6, r4
 	mov r4, r4, asr #16
 	mov r1, r4, asl #3
-	; v2 = vol(120)
+	; v2 = vol(v2, 120)
 	mov r14, #120
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -931,7 +957,7 @@ Inst11Loop:
 	mvnmi r6, r6
 	sub r6, r6, #16384
 	mov r2, r6, asl #1
-	; v3 = vol(120)
+	; v3 = vol(v3, 120)
 	mov r14, #120
 	mul r2, r14, r2
 	mov r2, r2, asr #7
@@ -952,9 +978,12 @@ Inst11Loop:
 	cmp r6, r4
 	mvnlt r0, r11	; #-32768
 	movge r0, r11	; #32767
-	; v1 = vol(v2)
-	mul r0, r1, r0
+	; v1 = vol(v1, v2)
+	and r14, r1, #0xff
+	mul r0, r14, r0
 	mov r0, r0, asr #7
+	mov r0, r0, asl #16
+	mov r0, r0, asr #16	; Sign extend word to long.
 
 	; v4 = mul(v2, -32768);
 	mvn r14, #32767
@@ -964,7 +993,8 @@ Inst11Loop:
 	; v4 = add(v4, 127);
 	mov r3, r3, asl #16
 	mov r3, r3, asr #16	; Sign extend word to long.
-	add r3, r3, #127
+	mov r14, #127
+	add r3, r3, r14
 	; v4 = clamp(v4)
 	cmp r3, r11		; #32767
 	movgt r3, r11	; #32767
@@ -1010,7 +1040,7 @@ Inst11Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r3, r6
-	; v4 = vol(128)
+	; v4 = vol(v4, 128)
 	; NOOP -- val<<7>>7
 
 	; v1 = mul(v1, v4);
@@ -1024,7 +1054,7 @@ Inst11Loop:
 	cmp r6, #3072
 	movle r6, #3072
 	mov r1, r6
-	; v2 = vol(128)
+	; v2 = vol(v2, 128)
 	; NOOP -- val<<7>>7
 
 	; v2 = mul(v2, 128);
@@ -1119,7 +1149,7 @@ LoopGen_10:
 	bne LoopGen_10
 
 ;----------------------------------------------------------------------------
-; Instrument 12 - colombia_physical_flute
+; Instrument 12 - 'colombia_physical_flute'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -1140,7 +1170,7 @@ Inst12Loop:
 	str r6, [r10, #AK_NOISESEEDS+4]
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
-	; v1 = vol(66)
+	; v1 = vol(v1, 66)
 	mov r14, #66
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -1148,7 +1178,8 @@ Inst12Loop:
 	; v4 = add(v1, 0);
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
-	add r3, r0, #0
+	mov r14, #0
+	add r3, r0, r14
 	; v4 = clamp(v4)
 	cmp r3, r11		; #32767
 	movgt r3, r11	; #32767
@@ -1169,7 +1200,7 @@ Inst12Loop:
 
 	; v2 = dly_cyc(3, v1, 76, 127);
 	mov r1, r0
-	; v2 = vol(127)
+	; v2 = vol(v2, 127)
 	mov r14, #127
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1192,7 +1223,7 @@ Inst12Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r2, r6
-	; v3 = vol(127)
+	; v3 = vol(v3, 127)
 	mov r14, #127
 	mul r2, r14, r2
 	mov r2, r2, asr #7
@@ -1211,7 +1242,8 @@ Inst12Loop:
 	; v3 = add(v3, 128);
 	mov r2, r2, asl #16
 	mov r2, r2, asr #16	; Sign extend word to long.
-	add r2, r2, #128
+	mov r14, #128
+	add r2, r2, r14
 	; v3 = clamp(v3)
 	cmp r2, r11		; #32767
 	movgt r2, r11	; #32767
@@ -1312,7 +1344,7 @@ LoopGen_11:
 	bne LoopGen_11
 
 ;----------------------------------------------------------------------------
-; Instrument 13 - colombia_pling1
+; Instrument 13 - 'colombia_pling1'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -1373,7 +1405,7 @@ Inst13Loop:
 	cmp r6, #4096
 	movle r6, #4096
 	mov r1, r6
-	; v2 = vol(128)
+	; v2 = vol(v2, 128)
 	; NOOP -- val<<7>>7
 
 	; v1 = mul(v1, v2);
@@ -1391,7 +1423,7 @@ AK_FINE_PROGRESS
 	blt Inst13Loop
 
 ;----------------------------------------------------------------------------
-; Instrument 14 - colombia_lead
+; Instrument 14 - 'colombia_lead'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -1410,7 +1442,7 @@ Inst14Loop:
 	mvnmi r6, r6
 	sub r6, r6, #16384
 	mov r0, r6, asl #1
-	; v1 = vol(92)
+	; v1 = vol(v1, 92)
 	mov r14, #92
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -1425,7 +1457,7 @@ Inst14Loop:
 	mvnmi r6, r6
 	sub r6, r6, #16384
 	mov r1, r6, asl #1
-	; v2 = vol(92)
+	; v2 = vol(v2, 92)
 	mov r14, #92
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1448,7 +1480,7 @@ Inst14Loop:
 	mov r1, r1, asl #16
 	mov r1, r1, asr #16	; Sign extend word to long.
 	str r1, [r10, #AK_OPINSTANCE+4*2]	
-	; v2 = vol(72)
+	; v2 = vol(v2, 72)
 	mov r14, #72
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1471,7 +1503,7 @@ Inst14Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(128)
+	; v2 = vol(v2, 128)
 	; NOOP -- val<<7>>7
 
 	; v2 = mul(v2, 64);
@@ -1480,7 +1512,8 @@ Inst14Loop:
 	; v2 = add(v2, 10);
 	mov r1, r1, asl #16
 	mov r1, r1, asr #16	; Sign extend word to long.
-	add r1, r1, #10
+	mov r14, #10
+	add r1, r1, r14
 	; v2 = clamp(v2)
 	cmp r1, r11		; #32767
 	movgt r1, r11	; #32767
@@ -1564,7 +1597,7 @@ LoopGen_13:
 	bne LoopGen_13
 
 ;----------------------------------------------------------------------------
-; Instrument 15 - colombia_chord1
+; Instrument 15 - 'colombia_chord1'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -1586,7 +1619,7 @@ Inst15Loop:
 	mul r4, r6, r4
 	mov r4, r4, asr #16
 	mov r1, r4, asl #3
-	; v2 = vol(64)
+	; v2 = vol(v2, 64)
 	mov r1, r1, asr #1	; val<<6>>7
 
 	; v2 = ctrl(v2);
@@ -1600,33 +1633,33 @@ Inst15Loop:
 	ldr r12, [r10, #AK_SMPLEN+4*13]
 	ldrb r6, [r4, r7]
 	mov r6, r6, asl #24
-	mov r6, r6, asr #24-7
+	mov r6, r6, asr #17
 	add r4, r4, r1
 	sub r12, r12, r1
 	ldr r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD1)]
-	cmp r5, r12, lsl #8+8
-	ldrltb r14, [r4, r5, lsr #8+8]
-	movge r14, #0
-	add r5, r5, #304<<8;8
+	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
+	movlt r14, #0
+	add r5, r5, #77824
 	str r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD1)]
 	mov r14, r14, asl #24
-	add r6, r6, r14, asr #24-7
+	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD2)]
-	cmp r5, r12, lsl #8+8
-	ldrltb r14, [r4, r5, lsr #8+8]
-	movge r14, #0
-	add r5, r5, #383<<8;8
+	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
+	movlt r14, #0
+	add r5, r5, #98048
 	str r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD2)]
 	mov r14, r14, asl #24
-	add r6, r6, r14, asr #24-7
+	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD3)]
-	cmp r5, r12, lsl #8+7
-	ldrltb r14, [r4, r5, lsr #8+7]
-	movge r14, #0
-	add r5, r5, #228<<8;7
+	cmp r12, r5, lsr #15
+	ldrgeb r14, [r4, r5, lsr #15]
+	movlt r14, #0
+	add r5, r5, #58368
 	str r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD3)]
 	mov r14, r14, asl #24
-	add r6, r6, r14, asr #24-7
+	add r6, r6, r14, asr #17
 	mov r0, r6
 	; v1 = clamp(v1)
 	cmp r0, r11		; #32767
@@ -1678,7 +1711,7 @@ LoopGen_14:
 	bne LoopGen_14
 
 ;----------------------------------------------------------------------------
-; Instrument 16 - colombia_chord2
+; Instrument 16 - 'colombia_chord2'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -1700,7 +1733,7 @@ Inst16Loop:
 	mul r4, r6, r4
 	mov r4, r4, asr #16
 	mov r1, r4, asl #3
-	; v2 = vol(64)
+	; v2 = vol(v2, 64)
 	mov r1, r1, asr #1	; val<<6>>7
 
 	; v2 = ctrl(v2);
@@ -1714,33 +1747,33 @@ Inst16Loop:
 	ldr r12, [r10, #AK_SMPLEN+4*13]
 	ldrb r6, [r4, r7]
 	mov r6, r6, asl #24
-	mov r6, r6, asr #24-7
+	mov r6, r6, asr #17
 	add r4, r4, r1
 	sub r12, r12, r1
 	ldr r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD1)]
-	cmp r5, r12, lsl #8+8
-	ldrltb r14, [r4, r5, lsr #8+8]
-	movge r14, #0
-	add r5, r5, #304<<8;8
+	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
+	movlt r14, #0
+	add r5, r5, #77824
 	str r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD1)]
 	mov r14, r14, asl #24
-	add r6, r6, r14, asr #24-7
+	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD2)]
-	cmp r5, r12, lsl #8+8
-	ldrltb r14, [r4, r5, lsr #8+8]
-	movge r14, #0
-	add r5, r5, #383<<8;8
+	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
+	movlt r14, #0
+	add r5, r5, #98048
 	str r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD2)]
 	mov r14, r14, asl #24
-	add r6, r6, r14, asr #24-7
+	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD3)]
-	cmp r5, r12, lsl #8+7
-	ldrltb r14, [r4, r5, lsr #8+7]
-	movge r14, #0
-	add r5, r5, #215<<8;7
+	cmp r12, r5, lsr #15
+	ldrgeb r14, [r4, r5, lsr #15]
+	movlt r14, #0
+	add r5, r5, #55040
 	str r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD3)]
 	mov r14, r14, asl #24
-	add r6, r6, r14, asr #24-7
+	add r6, r6, r14, asr #17
 	mov r0, r6
 	; v1 = clamp(v1)
 	cmp r0, r11		; #32767
@@ -1792,7 +1825,7 @@ LoopGen_15:
 	bne LoopGen_15
 
 ;----------------------------------------------------------------------------
-; Instrument 17 - colombia_lead_high
+; Instrument 17 - 'colombia_lead_high'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -1811,7 +1844,7 @@ Inst17Loop:
 	mvnmi r6, r6
 	sub r6, r6, #16384
 	mov r0, r6, asl #1
-	; v1 = vol(92)
+	; v1 = vol(v1, 92)
 	mov r14, #92
 	mul r0, r14, r0
 	mov r0, r0, asr #7
@@ -1826,7 +1859,7 @@ Inst17Loop:
 	mvnmi r6, r6
 	sub r6, r6, #16384
 	mov r1, r6, asl #1
-	; v2 = vol(92)
+	; v2 = vol(v2, 92)
 	mov r14, #92
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1849,7 +1882,7 @@ Inst17Loop:
 	mov r1, r1, asl #16
 	mov r1, r1, asr #16	; Sign extend word to long.
 	str r1, [r10, #AK_OPINSTANCE+4*2]	
-	; v2 = vol(72)
+	; v2 = vol(v2, 72)
 	mov r14, #72
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -1872,7 +1905,7 @@ Inst17Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(128)
+	; v2 = vol(v2, 128)
 	; NOOP -- val<<7>>7
 
 	; v2 = mul(v2, 64);
@@ -1881,7 +1914,8 @@ Inst17Loop:
 	; v2 = add(v2, 10);
 	mov r1, r1, asl #16
 	mov r1, r1, asr #16	; Sign extend word to long.
-	add r1, r1, #10
+	mov r14, #10
+	add r1, r1, r14
 	; v2 = clamp(v2)
 	cmp r1, r11		; #32767
 	movgt r1, r11	; #32767
@@ -1965,7 +1999,7 @@ LoopGen_16:
 	bne LoopGen_16
 
 ;----------------------------------------------------------------------------
-; Instrument 18 - colombia_chordstab1
+; Instrument 18 - 'colombia_chordstab1'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -2002,7 +2036,7 @@ Inst18Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(128)
+	; v2 = vol(v2, 128)
 	; NOOP -- val<<7>>7
 
 	; v1 = mul(v1, v2);
@@ -2012,7 +2046,7 @@ Inst18Loop:
 	; v1 = reverb(v1, 100, 16);
 	ldr r6, [r10, #AK_OPINSTANCE+4*0]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2030,13 +2064,13 @@ Inst18Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*0]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	mov r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*1]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2054,13 +2088,13 @@ Inst18Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*1]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*2]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2078,13 +2112,13 @@ Inst18Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*2]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*3]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2102,13 +2136,13 @@ Inst18Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*3]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*4]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2126,13 +2160,13 @@ Inst18Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*4]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*5]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2150,13 +2184,13 @@ Inst18Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*5]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*6]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2174,13 +2208,13 @@ Inst18Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*6]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*7]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2198,7 +2232,7 @@ Inst18Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*7]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r0, r5, r12
 	sub r9, r9, #2048*4*7
@@ -2252,7 +2286,7 @@ LoopGen_17:
 	bne LoopGen_17
 
 ;----------------------------------------------------------------------------
-; Instrument 19 - colombia_chordstab2
+; Instrument 19 - 'colombia_chordstab2'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -2289,7 +2323,7 @@ Inst19Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(128)
+	; v2 = vol(v2, 128)
 	; NOOP -- val<<7>>7
 
 	; v1 = mul(v1, v2);
@@ -2299,7 +2333,7 @@ Inst19Loop:
 	; v1 = reverb(v1, 100, 16);
 	ldr r6, [r10, #AK_OPINSTANCE+4*0]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2317,13 +2351,13 @@ Inst19Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*0]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	mov r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*1]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2341,13 +2375,13 @@ Inst19Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*1]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*2]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2365,13 +2399,13 @@ Inst19Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*2]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*3]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2389,13 +2423,13 @@ Inst19Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*3]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*4]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2413,13 +2447,13 @@ Inst19Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*4]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*5]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2437,13 +2471,13 @@ Inst19Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*5]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*6]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2461,13 +2495,13 @@ Inst19Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*6]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*7]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(100)
+	; r4 = vol(r4, 100)
 	mov r14, #100
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2485,7 +2519,7 @@ Inst19Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*7]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r0, r5, r12
 	sub r9, r9, #2048*4*7
@@ -2539,7 +2573,7 @@ LoopGen_18:
 	bne LoopGen_18
 
 ;----------------------------------------------------------------------------
-; Instrument 20 - colombia_leadstab
+; Instrument 20 - 'colombia_leadstab'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -2564,7 +2598,7 @@ Inst20Loop:
 	subs r6, r11, r6, asr #8
 	movle r6, #0
 	mov r1, r6
-	; v2 = vol(128)
+	; v2 = vol(v2, 128)
 	; NOOP -- val<<7>>7
 
 	; v1 = mul(v1, v2);
@@ -2574,7 +2608,7 @@ Inst20Loop:
 	; v1 = reverb(v1, 120, 16);
 	ldr r6, [r10, #AK_OPINSTANCE+4*0]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(120)
+	; r4 = vol(r4, 120)
 	mov r14, #120
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2592,13 +2626,13 @@ Inst20Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*0]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	mov r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*1]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(120)
+	; r4 = vol(r4, 120)
 	mov r14, #120
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2616,13 +2650,13 @@ Inst20Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*1]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*2]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(120)
+	; r4 = vol(r4, 120)
 	mov r14, #120
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2640,13 +2674,13 @@ Inst20Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*2]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*3]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(120)
+	; r4 = vol(r4, 120)
 	mov r14, #120
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2664,13 +2698,13 @@ Inst20Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*3]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*4]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(120)
+	; r4 = vol(r4, 120)
 	mov r14, #120
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2688,13 +2722,13 @@ Inst20Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*4]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*5]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(120)
+	; r4 = vol(r4, 120)
 	mov r14, #120
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2712,13 +2746,13 @@ Inst20Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*5]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*6]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(120)
+	; r4 = vol(r4, 120)
 	mov r14, #120
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2736,13 +2770,13 @@ Inst20Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*6]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r5, r5, r12
 	add r9, r9, #2048*4
 	ldr r6, [r10, #AK_OPINSTANCE+4*7]
 	ldr r4, [r9, r6, lsl #2]
-	; r4 = vol(120)
+	; r4 = vol(r4, 120)
 	mov r14, #120
 	mul r4, r14, r4
 	mov r4, r4, asr #7
@@ -2760,7 +2794,7 @@ Inst20Loop:
 	cmp r6, r14
 	movge r6, #0
 	str r6, [r10, #AK_OPINSTANCE+4*7]
-	; r12 = vol(16)
+	; r12 = vol(r12, 16)
 	mov r12, r12, asr #3	; val<<4>>7
 	add r0, r5, r12
 	sub r9, r9, #2048*4*7
@@ -2829,7 +2863,7 @@ LoopGen_19:
 	bne LoopGen_19
 
 ;----------------------------------------------------------------------------
-; Instrument 21 - colombia_pling2
+; Instrument 21 - 'colombia_pling2'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -2890,7 +2924,7 @@ Inst21Loop:
 	cmp r6, #4096
 	movle r6, #4096
 	mov r1, r6
-	; v2 = vol(128)
+	; v2 = vol(v2, 128)
 	; NOOP -- val<<7>>7
 
 	; v1 = mul(v1, v2);
@@ -2908,7 +2942,7 @@ AK_FINE_PROGRESS
 	blt Inst21Loop
 
 ;----------------------------------------------------------------------------
-; Instrument 22 - colombia_pling3
+; Instrument 22 - 'colombia_pling3'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -2969,7 +3003,7 @@ Inst22Loop:
 	cmp r6, #4096
 	movle r6, #4096
 	mov r1, r6
-	; v2 = vol(128)
+	; v2 = vol(v2, 128)
 	; NOOP -- val<<7>>7
 
 	; v1 = mul(v1, v2);
@@ -2987,7 +3021,7 @@ AK_FINE_PROGRESS
 	blt Inst22Loop
 
 ;----------------------------------------------------------------------------
-; Instrument 23 - colombia_pling4
+; Instrument 23 - 'colombia_pling4'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -3048,7 +3082,7 @@ Inst23Loop:
 	cmp r6, #4096
 	movle r6, #4096
 	mov r1, r6
-	; v2 = vol(128)
+	; v2 = vol(v2, 128)
 	; NOOP -- val<<7>>7
 
 	; v1 = mul(v1, v2);
@@ -3066,7 +3100,7 @@ AK_FINE_PROGRESS
 	blt Inst23Loop
 
 ;----------------------------------------------------------------------------
-; Instrument 24 - colombia_hat_low
+; Instrument 24 - 'colombia_hat_low'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -3082,7 +3116,7 @@ Inst24Loop:
 	cmp r6, #2048
 	movle r6, #2048
 	mov r1, r6
-	; v2 = vol(80)
+	; v2 = vol(v2, 80)
 	mov r14, #80
 	mul r1, r14, r1
 	mov r1, r1, asr #7
@@ -3112,7 +3146,7 @@ AK_FINE_PROGRESS
 	blt Inst24Loop
 
 ;----------------------------------------------------------------------------
-; Instrument 25 - colombia_missing_chord
+; Instrument 25 - 'colombia_missing_chord'
 ;----------------------------------------------------------------------------
 
 	; TODO: Delay loop flag.
@@ -3127,17 +3161,16 @@ Inst25Loop:
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
 	str r0, [r10, #AK_OPINSTANCE+4*0]	
-	; v1 = vol(16)
+	; v1 = vol(v1, 16)
 	mov r0, r0, asr #3	; val<<4>>7
 
 	; v1 = clone_reverse(smp,13, 0);
 	mov r0, r7
 	ldr r6, [r10, #AK_SMPADDR+4*(13+1)]
-	add r6, r6, #1
 	ldr r4, [r10, #AK_SMPLEN+4*13]
 	cmp r0, r4
 	movge r0, #0
-	mvnlt r0, r0
+	rsblt r0, r0, #0
 	ldrltb r0, [r6, r0]
 	mov r0, r0, asl #24
 	mov r0, r0, asr #16
@@ -3217,7 +3250,7 @@ AK_ResetVars:
 	subs r4, r4, #1
 	bne .1
 	add r6, r10, #AK_OPINSTANCE
-	.rept 10
+	.rept 9
 	str r0, [r6], #4
 	.endr
 	mov r4, r11, lsl #16	; 32767<<16
@@ -3280,11 +3313,9 @@ AK_SmpAddr:
 AK_ExtSmpAddr:
 	.skip AK_MaxExtSamples*4
 AK_OpInstance:
-	.skip 10*4
+	.skip 9*4
 AK_EnvDValue:
 	; NB. Must follow AK_OpInstance!
 	.skip 0*4
 
 ; ============================================================================
-
-.equ AK_SampleTotalBytes,	155040

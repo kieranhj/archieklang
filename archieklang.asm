@@ -4,10 +4,10 @@
 
 .equ _VERIFY_SAMPLES,           1
 .equ _PLAY_SONG,                1
-.equ _SAVE_GEN_SAMPLES,         0
+.equ _SAVE_GEN_SAMPLES,         1
 .equ _EMBED_QTM,                (_PLAY_SONG && 1)
 .equ _LOG_SAMPLES,              0
-.equ _EXTERNAL_SAMPLES,         0
+.equ _EXTERNAL_SAMPLES,         1
 
 .equ AK_CLEAR_FIRST_2_BYTES,    1
 
@@ -68,6 +68,9 @@ QtmEmbedded_Service:
 QtmEmbedded_Exit:
     .long QtmEmbedded_Base + 64
 .endif
+
+mod_data_p:
+    .long MOD_data
 
 main:
     adr r0, generating_msg
@@ -302,7 +305,7 @@ main:
     .endif
 
     mov r0, #0
-    adr r1, MOD_data
+    ldr r1, mod_data_p
 
     .if _LOG_SAMPLES
     ldr r2, qtm4

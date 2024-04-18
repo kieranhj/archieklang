@@ -1694,24 +1694,24 @@ Inst12Loop:
 	add r4, r4, r0
 	sub r12, r12, r0
 	ldr r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD1)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #77824
 	str r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD1)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD2)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #87552
 	str r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD2)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD3)]
-	ldrb r14, [r4, r5, lsr #15]
 	cmp r12, r5, lsr #15
+	ldrgeb r14, [r4, r5, lsr #15]
 	movlt r14, #0
 	add r5, r5, #58368
 	str r5, [r10, #AK_OPINSTANCE+4*(1+AK_CHORD3)]
@@ -1813,24 +1813,24 @@ Inst13Loop:
 	add r4, r4, #0
 	sub r12, r12, #0
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #77824
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #98048
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
-	ldrb r14, [r4, r5, lsr #15]
 	cmp r12, r5, lsr #15
+	ldrgeb r14, [r4, r5, lsr #15]
 	movlt r14, #0
 	add r5, r5, #58368
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
@@ -1932,24 +1932,24 @@ Inst14Loop:
 	add r4, r4, #0
 	sub r12, r12, #0
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #77824
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #98048
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
-	ldrb r14, [r4, r5, lsr #15]
 	cmp r12, r5, lsr #15
+	ldrgeb r14, [r4, r5, lsr #15]
 	movlt r14, #0
 	add r5, r5, #51968
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
@@ -2051,24 +2051,24 @@ Inst15Loop:
 	add r4, r4, #0
 	sub r12, r12, #0
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #73472
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD1)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
-	ldrb r14, [r4, r5, lsr #16]
 	cmp r12, r5, lsr #16
+	ldrgeb r14, [r4, r5, lsr #16]
 	movlt r14, #0
 	add r5, r5, #87552
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD2)]
 	mov r14, r14, asl #24
 	add r6, r6, r14, asr #17
 	ldr r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
-	ldrb r14, [r4, r5, lsr #15]
 	cmp r12, r5, lsr #15
+	ldrgeb r14, [r4, r5, lsr #15]
 	movlt r14, #0
 	add r5, r5, #58368
 	str r5, [r10, #AK_OPINSTANCE+4*(0+AK_CHORD3)]
@@ -2559,11 +2559,6 @@ LoopGen_18:
 	AK_PROGRESS
 
 Inst20Loop:
-	mov r14, #0
-	cmp r7, r14
-	bne .1
-	mov r7, r7	; BREAK HERE!
-	.1:
 	; v1 = clone_reverse(smp,16, 0);
 	mov r0, r7
 	ldr r6, [r10, #AK_SMPADDR+4*(16+1)]

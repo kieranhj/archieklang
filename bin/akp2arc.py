@@ -84,10 +84,10 @@ class AkpParser:
         else:
             self.sign_extend(asm_file, params_C[0]-1)
             if params_C[1]<0:
-                asm_file.write(f'\tmvn r{var-1}, #{-params_C[1]-1}\n')
+                asm_file.write(f'\tmvn r14, #{-params_C[1]-1}\n')
             else:
-                asm_file.write(f'\tmov r{var-1}, #{params_C[1]}\n')
-            asm_file.write(f'\tadd r{var-1}, r{params_C[0]-1}, r{var-1}\n')
+                asm_file.write(f'\tmov r14, #{params_C[1]}\n')
+            asm_file.write(f'\tadd r{var-1}, r{params_C[0]-1}, r14\n')
 
         self.clamp(asm_file, var)
 

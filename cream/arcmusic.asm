@@ -1715,8 +1715,8 @@ Inst11Loop:
 	; v2 = add(v1, -12823);
 	mov r0, r0, asl #16
 	mov r0, r0, asr #16	; Sign extend word to long.
-	mvn r1, #12822
-	add r1, r0, r1
+	mvn r14, #12822
+	add r1, r0, r14
 	; v2 = clamp(v2)
 	cmp r1, r11		; #32767
 	movgt r1, r11	; #32767
