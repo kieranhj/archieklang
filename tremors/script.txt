@@ -1,0 +1,198 @@
+2, 0, 0, 0, 0, 0, 0, 0
+$ 808 Noise osc, 4972, 4392, 580, N
+#
+v1 = osc_pulse(0, 2048, 22, 64);
+v2 = osc_pulse(1, 3034, 22, 64);
+v3 = osc_pulse(2, 1982, 22, 64);
+v4 = osc_pulse(3, 1154, 22, 64);
+v1 = add(v1, v2);
+v2 = add(v3, v4);
+v3 = osc_pulse(6, 1402, 22, 64);
+v4 = osc_pulse(7, 779, 22, 64);
+v3 = add(v3, v4);
+v1 = add(v1, v2);
+v1 = add(v1, v3);
+
+$ CH, 1516, 757, 759, N
+#
+v1 = clone(smp,0, 0);
+v1 = sv_flt_n(1, v1, 127, 127, 2);
+v1 = sv_flt_n(2, v1, 127, 127, 2);
+v1 = sv_flt_n(3, v1, 127, 127, 1);
+v2 = imported_sample(smp,0);
+v2 = add(v3, v2);
+v3 = dly_cyc(7, v2, 3, 127);
+v3 = mul(v3, 32767);
+v2 = sh(9, v2, 3);
+v1 = mul(v1, v2);
+
+$ OH, 4972, 4392, 580, N
+#
+v1 = clone(smp,0, 0);
+v1 = sv_flt_n(1, v1, 127, 127, 2);
+v1 = sv_flt_n(2, v1, 127, 127, 2);
+v1 = sv_flt_n(3, v1, 127, 127, 1);
+v2 = imported_sample(smp,0);
+v2 = add(v3, v2);
+v3 = dly_cyc(7, v2, 3, 127);
+v3 = mul(v3, 32767);
+v2 = sh(9, v2, 3);
+v2 = dly_cyc(10, v2, 2047, 127);
+v2 = dly_cyc(11, v2, 920, 127);
+v4 = osc_pulse(12, 11, 64, 63);
+v4 = add(v4, 16384);
+v2 = add(v4, v2);
+v1 = mul(v1, v2);
+
+$ 808 Kick V1, 3466, 2196, 1270, N
+#
+v1 = envd(0, 5, 0, 94);
+v1 = mul(v1, v1);
+v1 = mul(v1, v1);
+v1 = mul(v1, v1);
+v1 = add(v1, 128);
+v1 = osc_sine(5, v1, 127);
+
+$ 808 Snare V1, 3466, 2196, 1270, N
+#
+v2 = envd(0, 7, 0, 127);
+v3 = envd(1, 4, 0, 127);
+v1 = osc_sine(3, 768, 44);
+v1 = mul(v1, v2);
+v4 = osc_sine(5, 1152, 44);
+v4 = mul(v4, v3);
+v1 = add(v4, v1);
+v2 = envd(9, 8, 0, 127);
+v3 = osc_noise(44);
+v3 = sv_flt_n(11, v3, 112, 101, 1);
+v3 = mul(v2, v3);
+v1 = add(v1, v3);
+
+$ Kick+Snare, 3466, 2196, 1270, N
+#
+v1 = clone(smp,3, 0);
+v2 = clone(smp,4, 0);
+v1 = add(v1, v2);
+
+$ Pad Poly Saw, 59386, 32736, 26650, N
+#
+v1 = osc_saw(0, 1024, 127);
+v2 = osc_saw(1, 1018, 127);
+v3 = osc_saw(2, 1030, 127);
+v1 = add(v1, v2);
+v1 = add(v1, v3);
+v2 = osc_tri(5, 1, 101);
+v2 = add(v2, 1424);
+v2 = ctrl(v2);
+v1 = sv_flt_n(8, v1, v2, 77, 2);
+v1 = sv_flt_n(9, v1, 46, 127, 2);
+
+$ CHord 1, 32768, 16384, 16384, Y
+#
+v1 = chordgen(0, 6, 3, 7, 10, 127);
+v1 = sv_flt_n(1, v1, 5, 127, 2);
+v1 = add(v1, v1);
+v1 = add(v1, v1);
+v1 = add(v1, v1);
+
+$ Chord2, 32768, 16384, 16384, Y
+#
+v1 = chordgen(0, 6, 2, 7, 9, 0);
+v1 = sv_flt_n(1, v1, 5, 127, 2);
+v1 = add(v1, v1);
+v1 = add(v1, v1);
+v1 = add(v1, v1);
+
+$ TEEBEE, 6822, 5492, 1330, N
+#
+v1 = osc_saw(0, 1024, 58);
+v2 = envd(1, 5, 0, 127);
+v2 = add(v2, -22320);
+v2 = ctrl(v2);
+v1 = sv_flt_n(4, v1, v2, 5, 0);
+v2 = envd(5, 9, 0, 127);
+v1 = mul(v1, v2);
+v2 = reverb(v1, 94, 7);
+v3 = enva(9, 13, 0, 127);
+v2 = mul(v2, v3);
+v1 = add(v1, v2);
+
+$ Tom, 1400, 700, 700, N
+#
+v1 = imported_sample(smp,0);
+v1 = add(v2, v1);
+v2 = dly_cyc(2, v1, 3, 127);
+v2 = mul(v2, 32767);
+v1 = sh(4, v1, 3);
+v3 = osc_sine(5, 512, 127);
+v1 = mul(v1, v3);
+
+$ Cowbell, 7292, 3692, 3600, N
+#
+v2 = imported_sample(smp,0);
+v2 = add(v2, v3);
+v3 = dly_cyc(3, v2, 2, 127);
+v3 = mul(v3, 32606);
+v1 = sh(5, v2, 2);
+v4 = envd(6, 11, 0, 6);
+v2 = add(v4, v2);
+v4 = envd(8, 15, 0, 4);
+v2 = add(v2, v4);
+v1 = osc_pulse(10, 2048, 127, 64);
+v4 = osc_pulse(11, 3034, 127, 64);
+v1 = add(v1, v4);
+v1 = mul(v1, v2);
+v1 = sv_flt_n(14, v1, 46, 32, 2);
+
+$ Clap env, 7030, 3514, 3516, N
+#
+v1 = envd(2, 1, 0, 69);
+v2 = envd(3, 3, 0, 29);
+v1 = add(v1, v2);
+v3 = dly_cyc(5, v1, 202, 127);
+v4 = dly_cyc(6, v1, 163, 90);
+v4 = add(v1, v4);
+v1 = add(v3, v1);
+v4 = dly_cyc(10, v4, 429, 127);
+v1 = add(v1, v4);
+v3 = envd(12, 15, 0, 20);
+v3 = dly_cyc(14, v3, 591, 127);
+v1 = add(v1, v3);
+
+$ CP, 7120, 3560, 3560, N
+#
+v1 = clone(smp,12, 0);
+v2 = osc_noise(127);
+v2 = sv_flt_n(2, v2, 46, 75, 2);
+v1 = mul(v2, v1);
+v1 = add(v1, v1);
+
+$ TB low, 4834, 2894, 1940, N
+#
+v1 = osc_saw(0, 256, 58);
+v2 = envd(1, 2, 0, 127);
+v2 = add(v2, -9023);
+v2 = ctrl(v2);
+v3 = enva(4, 6, 0, 127);
+v3 = add(v3, -31818);
+v3 = ctrl(v3);
+v1 = sv_flt_n(7, v1, v2, v3, 0);
+v2 = envd(8, 12, 0, 127);
+v1 = mul(v1, v2);
+
+$ TB cutoff increase, 4834, 2894, 1940, N
+#
+v1 = osc_saw(0, 256, 58);
+v2 = envd(1, 2, 0, 127);
+v2 = add(v2, 5223);
+v2 = ctrl(v2);
+v3 = enva(4, 6, 0, 127);
+v3 = add(v3, -31818);
+v3 = ctrl(v3);
+v1 = sv_flt_n(7, v1, v2, v3, 0);
+v2 = envd(8, 12, 0, 127);
+v1 = mul(v1, v2);
+
+$ Instrument_17, 11424, 5712, 5712, N
+#
+

@@ -162,6 +162,41 @@ class AkpParser:
         self.vol(asm_file, var, gain_V, gain_C)
         self._instance+=1
 
+    def func_sh(self, asm_file, var, param_string):
+        param_strings=parse("{:d}, {}, {}", param_string)
+
+        value_V=parse("v{:d}", param_strings[1])
+        value_C=parse("{:d}", param_strings[1])
+        step_V=parse("v{:d}", param_strings[2])
+        step_C=parse("{:d}", param_strings[2])
+
+        asm_file.write(f'\tldr r6, [r10, #AK_OPINSTANCE+4*{self._instance+0}]\n')
+        asm_file.write(f'\tsubs r6, r6, #1\n')
+
+        # buffer=val
+        if value_V is not None:
+            asm_file.write(f'\tstrlt r{value_V[0]-1}, [r10, #AK_OPINSTANCE+4*{self._instance+1}]\n')
+        else:
+            asm_file.write(f'\tmovlt r14, #{value_C[0]}\n')
+            asm_file.write(f'\tstrlt r14, [r10, #AK_OPINSTANCE+4*{self._instance+1}]\n')
+
+        # counter=step2
+        if step_V is not None:
+            asm_file.write(f'\tmovlt r14, r{step_V[0]-1}, asl #24\n')
+            asm_file.write(f'\tmovlt r14, r14, asr #24\n')
+            asm_file.write(f'\tmovlt r4, r14\n')
+            asm_file.write(f'\tmullt r14, r4, r14\n')
+            asm_file.write(f'\tmovlt r6, r14, asr #2\n')
+        else:
+            asm_file.write(f'\tmovlt r6, #{(step_C[0]*step_C[0])>>2}\n')
+            
+
+        asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*{self._instance+0}]\n')
+        asm_file.write(f'\tldr r{var-1}, [r10, #AK_OPINSTANCE+4*{self._instance+1}]\n')
+
+        self._instance+=2
+
+
     def func_osc_sine(self, asm_file, var, param_string):
         param_strings=parse("{:d}, {}, {}", param_string)
 
@@ -379,17 +414,19 @@ class AkpParser:
         gain_V=parse("v{:d}", param_strings[3])
         gain_C=parse("{:d}", param_strings[3])
 
-        asm_file.write(f'\tmov r{var-1}, r{val_V[0]-1}\n')
-        self.vol(asm_file, var, gain_V, gain_C)
+        asm_file.write(f'\tmov r4, r{val_V[0]-1}\n')
+        self.vol(asm_file, 5, gain_V, gain_C)
 
         asm_file.write(f'\tldr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
-        asm_file.write(f'\tstr r{var-1}, [r9, r6, lsl #2]\n')
+
+        asm_file.write(f'\tstr r4, [r9, r6, lsl #2]\n')
         asm_file.write(f'\tadd r6, r6, #1\n')
 
         if delay_V is not None:
             asm_file.write(f'\tcmp r6, r{delay_V[0]-1}\n')
         else:
-            asm_file.write(f'\tcmp r6, #{delay_C[0]}\n')
+            asm_file.write(f'\tmov r14, #{delay_C[0]}\n')
+            asm_file.write(f'\tcmp r6, r14\n')
 
         asm_file.write(f'\tmovge r6, #0\n')
         asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
@@ -397,33 +434,28 @@ class AkpParser:
 
         self._instance+=1
 
+        asm_file.write(f'\tadd r9, r9, #2048*4\n')
+        self._buffers+=1
+
     def func_reverb(self, asm_file, var, param_string):
         param_strings=parse("{}, {}, {}", param_string)
 
         self.func_cmb_flt_n(asm_file, 13, f'16, {param_strings[0]}, 557, {param_strings[1]}, {param_strings[2]}')
         asm_file.write(f'\tmov r5, r12\n')
-        asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self.func_cmb_flt_n(asm_file, 13, f'17, {param_strings[0]}, 593, {param_strings[1]}, {param_strings[2]}')
         asm_file.write(f'\tadd r5, r5, r12\n')
-        asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self.func_cmb_flt_n(asm_file, 13, f'18, {param_strings[0]}, 641, {param_strings[1]}, {param_strings[2]}')
         asm_file.write(f'\tadd r5, r5, r12\n')
-        asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self.func_cmb_flt_n(asm_file, 13, f'19, {param_strings[0]}, 677, {param_strings[1]}, {param_strings[2]}')
         asm_file.write(f'\tadd r5, r5, r12\n')
-        asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self.func_cmb_flt_n(asm_file, 13, f'20, {param_strings[0]}, 709, {param_strings[1]}, {param_strings[2]}')
         asm_file.write(f'\tadd r5, r5, r12\n')
-        asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self.func_cmb_flt_n(asm_file, 13, f'21, {param_strings[0]}, 743, {param_strings[1]}, {param_strings[2]}')
         asm_file.write(f'\tadd r5, r5, r12\n')
-        asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self.func_cmb_flt_n(asm_file, 13, f'22, {param_strings[0]}, 787, {param_strings[1]}, {param_strings[2]}')
         asm_file.write(f'\tadd r5, r5, r12\n')
-        asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self.func_cmb_flt_n(asm_file, 13, f'23, {param_strings[0]}, 809, {param_strings[1]}, {param_strings[2]}')
         asm_file.write(f'\tadd r{var-1}, r5, r12\n')
-        asm_file.write(f'\tsub r9, r9, #2048*4*7\n')
 
         self.clamp(asm_file, var)
 
@@ -462,6 +494,9 @@ class AkpParser:
         
         self.vol(asm_file, var, gain_V, gain_C)
         self._instance+=1
+
+        asm_file.write(f'\tadd r9, r9, #2048*4\n')
+        self._buffers+=1
 
     def func_sv_flt_n(self, asm_file, var, param_string):
         param_strings=parse("{:d}, {}, {}, {}, {}", param_string)
@@ -644,6 +679,8 @@ class AkpParser:
         inst_nr=0
         self._max_instances=0
         self._max_dvalues=0
+        self._max_buffers=0
+        self._buffers=0
 
         self._instruments=[]
         
@@ -671,7 +708,7 @@ class AkpParser:
 
             self._akp_file.readline()       # swallow hash line
 
-            asm_file.write(f'\t; TODO: Delay loop flag.\n')
+            asm_file.write(f'\t; TODO: Delay buffer flag {self._buffers}.\n')
             asm_file.write(f'\tbl AK_ResetVars\n')
             asm_file.write(f'\tmov r7, #0\t; Sample byte count\n')
             asm_file.write(f'\tAK_PROGRESS\n\n')
@@ -686,6 +723,7 @@ class AkpParser:
 
             self._instance=0
             self._dvalue=0
+            self._buffers=0
 
             while True:
                 cmd_line=self._akp_file.readline()
@@ -701,6 +739,8 @@ class AkpParser:
                     self.func_mul(asm_file, cmd_def[0], cmd_def[2])
                 elif cmd_def[1]=='osc_saw':
                     self.func_osc_saw(asm_file, cmd_def[0], cmd_def[2])
+                elif cmd_def[1]=='sh':
+                    self.func_sh(asm_file, cmd_def[0], cmd_def[2])
                 elif cmd_def[1]=='osc_tri':
                     self.func_osc_tri(asm_file, cmd_def[0], cmd_def[2])
                 elif cmd_def[1]=='enva':
@@ -744,6 +784,12 @@ class AkpParser:
 
             if self._dvalue > self._max_dvalues:
                 self._max_dvalues = self._dvalue
+
+            if self._buffers > self._max_buffers:
+                self._max_buffers = self._buffers
+
+            if self._buffers > 0:
+                asm_file.write(f'\tsub r9, r9, #2048*4*{self._buffers}\n')
 
             #asm_file.write(f'\t.if _LOG_SAMPLES\n')
             #asm_file.write(f'\tmov r0, r0, asr #8\n')
@@ -976,7 +1022,7 @@ class AkpParser:
         asm_file.write('; r6 = temp\n')
         asm_file.write('; r7 = Sample byte count\n')
         asm_file.write('; r8 = Sample Buffer Start Address\n')
-        asm_file.write('; r9 = 32768 Bytes Temporary Work Buffer Address (can be freed after sample rendering complete)\n')
+        asm_file.write('; r9 = 8*2048 word (=65536 byte) Temporary Work Buffer Address (can be freed after sample rendering complete)\n')
         asm_file.write('; r10 = Base of AK_Vars\n')
         asm_file.write('; r11 = 36767 (0x7fff)\n')
         asm_file.write('; r12 = temp\n')
