@@ -1,0 +1,210 @@
+0, 0, 0, 0, 0, 0, 0, 0
+$ colombia_kick, 2176, 2174, 2, N
+#
+v2 = envd(0, 10, 0, 127);
+v3 = mul(v2, 1024);
+v3 = add(v3, -300);
+v1 = osc_sine(3, v3, 128);
+v1 = mul(v1, v2);
+v2 = envd(5, 2, 0, 128);
+v3 = osc_saw(6, 2304, 128);
+v3 = mul(v2, v3);
+v1 = add(v1, v3);
+
+$ colombia_snare, 8192, 4724, 3468, Y
+#
+v3 = envd(0, 16, 8, 128);
+v4 = envd(1, 9, 24, 128);
+v1 = osc_saw(2, v2, 128);
+v1 = mul(v1, v3);
+v1 = sv_flt_n(4, v1, 12, 16, 1);
+v3 = cmb_flt_n(5, v1, 256, 64, 48);
+v2 = add(v1, 23269);
+v1 = add(v1, v3);
+v2 = mul(v2, v2);
+v1 = mul(v1, v4);
+
+$ colombia_kick+snare, 8192, 4095, 4097, N
+#
+v1 = clone(smp,0, 0);
+v2 = clone(smp,1, 0);
+v1 = add(v1, v2);
+
+$ colombia_openhat, 4096, 2047, 2049, N
+#
+v1 = clone(smp,1, 3072);
+v1 = sv_flt_n(1, v1, 120, 127, 1);
+
+$ colombia_closedhat, 2304, 1151, 1153, N
+#
+v2 = envd(0, 4, 24, 128);
+v1 = clone(smp,3, 1044);
+v1 = mul(v1, v2);
+
+$ colombia_kick+hat, 2304, 1151, 1153, N
+#
+v1 = clone(smp,0, 0);
+v2 = clone(smp,4, 0);
+v1 = add(v1, v2);
+
+$ colombia_ghostsnare, 2816, 1407, 1409, N
+#
+v2 = envd(0, 4, 24, 100);
+v1 = clone(smp,1, 0);
+v1 = mul(v1, v2);
+
+$ colombia_reversekick, 2176, 2174, 2, N
+#
+v1 = clone_reverse(smp,0, 0);
+
+$ colombia_reversesnare, 2304, 1151, 1153, N
+#
+v1 = clone_reverse(smp,1, 4096);
+
+$ colombia_superbass, 16384, 8192, 8192, Y
+#
+v2 = osc_sine(0, 123, 120);
+v3 = osc_tri(1, 252, 120);
+v2 = ctrl(v2);
+v1 = osc_pulse(3, 500, v2, 65);
+v4 = mul(v2, -32768);
+v4 = add(v4, 127);
+v1 = sv_flt_n(6, v1, v4, 127, 0);
+v4 = envd(7, 32, 0, 128);
+v1 = mul(v1, v4);
+v2 = envd(9, 10, 12, 128);
+v2 = mul(v2, 128);
+v1 = sv_flt_n(11, v1, v2, 32, 0);
+v1 = add(v1, v3);
+
+$ colombia_superbass_high, 8192, 4096, 4096, Y
+#
+v2 = osc_sine(0, 246, 120);
+v3 = osc_tri(1, 252, 120);
+v2 = ctrl(v2);
+v1 = osc_pulse(3, 1000, v2, 65);
+v4 = mul(v2, -32768);
+v4 = add(v4, 127);
+v1 = sv_flt_n(6, v1, v4, 127, 0);
+v4 = envd(7, 32, 0, 128);
+v1 = mul(v1, v4);
+v2 = envd(9, 10, 12, 128);
+v2 = mul(v2, 128);
+v1 = sv_flt_n(11, v1, v2, 32, 0);
+v1 = add(v1, v3);
+
+$ colombia_physical_flute, 32768, 27268, 5500, Y
+#
+v1 = osc_noise(66);
+v4 = add(v1, 0);
+v1 = add(v1, v2);
+v2 = dly_cyc(3, v1, 76, 127);
+v2 = mul(v2, -32768);
+v3 = envd(5, 26, 0, 127);
+v3 = ctrl(v3);
+v3 = mul(v3, -32768);
+v3 = add(v3, 128);
+v2 = sv_flt_n(9, v2, v3, 21, 0);
+v4 = mul(v4, -16384);
+v1 = add(v1, v4);
+
+$ colombia_pling1, 2816, 1407, 1409, N
+#
+v1 = clone(smp,9, 1024);
+v1 = sv_flt_n(1, v1, 48, 0, 1);
+v2 = envd(2, 8, 16, 128);
+v1 = mul(v1, v2);
+
+$ colombia_lead, 8192, 4096, 4096, Y
+#
+v1 = osc_tri(0, 1000, 92);
+v2 = osc_tri(1, 1007, 92);
+v1 = add(v1, v2);
+v2 = osc_saw(3, 2000, 72);
+v1 = add(v1, v2);
+v2 = envd(5, 8, 0, 128);
+v2 = mul(v2, 64);
+v2 = add(v2, 10);
+v1 = sv_flt_n(8, v1, v2, 127, 2);
+
+$ colombia_chord1, 6144, 3894, 2250, Y
+#
+v2 = osc_sine(0, 4, 64);
+v2 = ctrl(v2);
+v1 = chordgen(2, 13, 3, 7, 10, v2);
+
+$ colombia_chord2, 6144, 3894, 2250, Y
+#
+v2 = osc_sine(0, 4, 64);
+v2 = ctrl(v2);
+v1 = chordgen(2, 13, 3, 7, 9, v2);
+
+$ colombia_lead_high, 8192, 4096, 4096, Y
+#
+v1 = osc_tri(0, 2000, 92);
+v2 = osc_tri(1, 2014, 92);
+v1 = add(v1, v2);
+v2 = osc_saw(3, 4000, 72);
+v1 = add(v1, v2);
+v2 = envd(5, 8, 0, 128);
+v2 = mul(v2, 64);
+v2 = add(v2, 10);
+v1 = sv_flt_n(8, v1, v2, 127, 2);
+
+$ colombia_chordstab1, 4096, 2048, 2048, Y
+#
+v1 = clone(smp,14, 0);
+v1 = add(v1, v1);
+v2 = envd(2, 8, 0, 128);
+v1 = mul(v1, v2);
+v1 = reverb(v1, 100, 16);
+
+$ colombia_chordstab2, 4096, 2048, 2048, Y
+#
+v1 = clone(smp,15, 0);
+v1 = add(v1, v1);
+v2 = envd(2, 8, 0, 128);
+v1 = mul(v1, v2);
+v1 = reverb(v1, 100, 16);
+
+$ colombia_leadstab, 4096, 2184, 1912, Y
+#
+v1 = clone(smp,16, 0);
+v2 = envd(1, 6, 0, 128);
+v1 = mul(v1, v2);
+v1 = reverb(v1, 120, 16);
+v2 = mul(v1, 16384);
+v1 = add(v1, v2);
+
+$ colombia_pling2, 2816, 1407, 1409, N
+#
+v1 = clone(smp,9, 1024);
+v1 = sv_flt_n(1, v1, 32, 0, 2);
+v2 = envd(2, 7, 16, 128);
+v1 = mul(v1, v2);
+
+$ colombia_pling3, 2816, 1407, 1409, N
+#
+v1 = clone(smp,9, 1024);
+v1 = sv_flt_n(1, v1, 58, 0, 0);
+v2 = envd(2, 7, 16, 128);
+v1 = mul(v1, v2);
+
+$ colombia_pling4, 2816, 1407, 1409, N
+#
+v1 = clone(smp,9, 1024);
+v1 = sv_flt_n(1, v1, 10, 1, 0);
+v2 = envd(2, 7, 16, 128);
+v1 = mul(v1, v2);
+
+$ colombia_hat_low, 672, 335, 337, N
+#
+v2 = envd(0, 4, 8, 80);
+v1 = clone(smp,3, 32);
+v1 = mul(v1, v2);
+
+$ colombia_missing_chord, 10240, 5119, 5121, Y
+#
+v1 = osc_saw(0, 2000, 16);
+v1 = clone_reverse(smp,13, 0);
+

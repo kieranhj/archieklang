@@ -7,7 +7,7 @@
 .equ _SAVE_GEN_SAMPLES,         0
 .equ _EMBED_QTM,                (_PLAY_SONG && 1)
 .equ _LOG_SAMPLES,              1
-.equ _EXTERNAL_SAMPLES,         1
+;.equ _EXTERNAL_SAMPLES,         1  ; Now provided by make.bat
 
 .equ AK_CLEAR_FIRST_2_BYTES,    1
 
@@ -363,7 +363,10 @@ string_buffer:
 	.skip 16
 
 generating_msg:
-    .byte 13,10,"Generating samples",0
+    .byte 13,10
+    .include "build/modname.i"
+    .byte 13,10
+    .byte "Generating samples",0
     .p2align 2
 
 total_msg:
@@ -452,7 +455,7 @@ qtm4:
 .macro AK_FINE_PROGRESS
 .endm
 
-.include "arcmusic.asm"
+.include "build/arcmusic.asm"
 
 ; ============================================================================
 ; Data.

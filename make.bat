@@ -4,40 +4,46 @@ echo Start build...
 if EXIST build\archieklang.bin del /Q build\archieklang.bin
 if NOT EXIST build mkdir build
 
-if "%2"=="" (
-	echo "Usage: make.bat <folder> <mod filename>"
+if "%1"=="" (
+	echo "Usage: make.bat <mod filename>"
 	exit /b 1
 )
 
-echo Splitting MOD %1\%2...
-bin\SplitMod.exe %1\%2
+echo Splitting MOD '%1'...
+copy "songs\%1" build
+
+bin\SplitMod.exe build\%1
 
 if %ERRORLEVEL% neq 0 (
 	echo Failed to split MOD.
 	exit /b 1
 )
 
-del build\music.mod.smp
-del build\music.mod.trk
-move "%1\%2.smp" build
-move "%1\%2.trk" build
-ren "build\%2.smp" music.mod.smp
-ren "build\%2.trk" music.mod.trk
+del build\music.mod.*
+ren "build\%1.smp" music.mod.smp
+ren "build\%1.trk" music.mod.trk
+ren "build\%1.i" music.mod.i
 
-if EXIST %1\script.txt (
 echo Generating code...
-python bin\akp2arc.py %1\script.txt -o %1\arcmusic.asm
+python bin\akp2arc.py scripts\%1.txt -o build\arcmusic.asm
 
 if %ERRORLEVEL% neq 0 (
 	echo Failed to generate ArchieKlang code.
 	exit /b 1
 )
+
+if EXIST "imported\%1.raw" (
+    echo Copying imported samples...
+    copy "imported\%1.raw" build\Isamp.raw
+    set DEFINE=-D_EXTERNAL_SAMPLES=1
+) else (
+    set DEFINE=-D_EXTERNAL_SAMPLES=0
 )
 
-copy "%1\Isamp.raw" build
+echo .byte "%1" > build\modname.i
 
 echo Assembling code...
-bin\vasmarm_std_win32.exe -L build\compile.txt -m250 -Fbin -I%1 -opt-adr -o build\archieklang.bin archieklang.asm
+bin\vasmarm_std_win32.exe -L build\compile.txt -m250 -Fbin -Ibuild %DEFINE% -opt-adr -o build\archieklang.bin archieklang.asm
 
 if %ERRORLEVEL% neq 0 (
 	echo Failed to assemble code.
