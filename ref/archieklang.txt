@@ -23,10 +23,10 @@ TODO:
     - nah-kolor 'on fire'.mod -                 BUILT: 1/28 errors > 1
     - optimal workflow.mod -                    BUILT: 3/28 errors > 1
     - tecon-disco transmission.mod -            BUILT: 6/31 errors > 1
-    - Virgill&Maze-national waffle day.mod -    MISSING LAST THREE NODES
-    - Virgill-80s architecture.mod -            MISSING LAST THREE NODES
+    - Virgill&Maze-national waffle day.mod -    BUILT: 7/18 errors > 1
+    - Virgill-80s architecture.mod -            BUILT: 7/27 errors > 1
     - Virgill-amigahub.mod -                    BUILT: 1/25 errors > 1
-    - Virgill-atariklang.mod -                  MISSING LAST THREE NODES
+    - Virgill-atariklang.mod -                  BUILT: 4/21 errors > 1
     - Virgill-colombia.mod -                    BUILT: 3/25 errors > 1
     - Virgill-mothership.mod -                  BUILT: 4/20 errors > 1
     - Virgill-nihil admirari.mod -              BUILT: PASSED!

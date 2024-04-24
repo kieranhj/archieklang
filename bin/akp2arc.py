@@ -7,7 +7,7 @@ import os
 import struct
 from parse import *
 
-DEBUG_INSTRUMENT=2
+DEBUG_INSTRUMENT=0
 DEBUG_SAMPLE=0
 
 DECAY_TABLE = [32767, 32767, 32767, 16384, 10922, 8192, 6553, 4681, 3640, 2978, 2520, 2048, 1724, 1489, 1310, 1129, 992, 885, 799, 712, 642, 585, 537, 489, 448, 414, 385, 356, 330, 309, 289, 270, 254, 239, 225, 212, 201, 190, 181, 171, 163, 155, 148, 141, 134, 129, 123, 118, 113, 108, 104, 100, 96, 93, 89, 86, 83, 80, 77, 75, 72, 70, 68, 65, 63, 61, 60, 58, 56, 54, 53, 51, 50, 49, 47, 46, 45, 44, 43, 41, 40, 39, 38, 38, 37, 36, 35, 34, 33, 33, 32, 31, 30, 30, 29, 29, 28, 27, 27, 26, 26, 25, 25, 24, 24, 23, 23, 22, 22, 22, 21, 21, 20, 20, 20, 19, 19, 19, 18, 18, 18, 17, 17, 17, 17, 16, 16, 16]
@@ -695,6 +695,75 @@ class AkpParser:
 
         self._instance+=1
 
+    def func_adsr(self, asm_file, var, param_string):
+        params=parse("{:d}, {:d}, {:d}, {:d}, {:d}, {:d}, {:d}", param_string)
+
+        self._adsr_values.append(params)
+
+        attackAmount=params[1]
+        decayAmount=params[2]
+        sustainLevel=params[3]
+        sustainLength=params[4]
+        releaseAmount=params[5]
+        peak=params[6]
+
+        adsr_instance=len(self._adsr_values)-1
+
+        asm_file.write(f'\tldr r4, [r10, #AK_OPINSTANCE+4*{self._instance}]\t; val\n')
+        asm_file.write(f'\tldrb r14, [r10, #AK_OPINSTANCE+4*{self._instance+1}]\t; mode\n')
+
+        asm_file.write(f'\tcmp r14, #ADSR_Decay\n')
+        asm_file.write(f'\tbeq ADSR_D_{self._inst_nr}_{self._instance}\n')
+        asm_file.write(f'\tcmp r14, #ADSR_Sustain\n')
+        asm_file.write(f'\tbeq ADSR_S_{self._inst_nr}_{self._instance}\n')
+        asm_file.write(f'\tcmp r14, #ADSR_Release\n')
+        asm_file.write(f'\tbeq ADSR_R_{self._inst_nr}_{self._instance}\n\n')
+
+        asm_file.write(f'ADSR_A_{self._inst_nr}_{self._instance}:\t; Attack\n')
+        # asm_file.write(f'\tmov r5, #{attackAmount}\n')
+        asm_file.write(f'\tldr r5, [r10, #AK_ADSRVALUES+24*{adsr_instance}+4*0]\t; attackAmount\n')
+        asm_file.write(f'\tadd r4, r4, r5\n')
+        # asm_file.write(f'\tmov r6, #{peak}\n')
+        asm_file.write(f'\tldr r6, [r10, #AK_ADSRVALUES+24*{adsr_instance}+4*5]\t; peak\n')
+        asm_file.write(f'\tcmp r4, r6\n')
+        asm_file.write(f'\tmovge r4, r6\n')
+        asm_file.write(f'\tmovge r14, #ADSR_Decay\n')
+        asm_file.write(f'\tb ADSR_End_{self._inst_nr}_{self._instance}\n\n')
+
+        asm_file.write(f'ADSR_D_{self._inst_nr}_{self._instance}:\t; Decay\n')
+        # asm_file.write(f'\tmov r5, #{decayAmount}\n')
+        asm_file.write(f'\tldr r5, [r10, #AK_ADSRVALUES+24*{adsr_instance}+4*1]\t; decayAmount\n')
+        asm_file.write(f'\tsub r4, r4, r5\n')
+        # asm_file.write(f'\tmov r6, #{sustainLevel}\n')
+        asm_file.write(f'\tldr r6, [r10, #AK_ADSRVALUES+24*{adsr_instance}+4*2]\t; sustainLevel\n')
+        asm_file.write(f'\tcmp r4, r6\n')
+        asm_file.write(f'\tmovle r4, r6\n')
+        asm_file.write(f'\tmovle r14, #ADSR_Sustain\n')
+        asm_file.write(f'\tb ADSR_End_{self._inst_nr}_{self._instance}\n\n')
+
+        asm_file.write(f'ADSR_S_{self._inst_nr}_{self._instance}:\t; Sustain\n')
+        asm_file.write(f'\tldr r5, [r10, #AK_OPINSTANCE+4*{self._instance+2}]\t; SustainCounter\n')
+        asm_file.write(f'\tadd r5, r5, #1\n')
+        asm_file.write(f'\tstr r5, [r10, #AK_OPINSTANCE+4*{self._instance+2}]\t; SustainCounter\n')
+        # asm_file.write(f'\tmov r6, #{sustainLength}\n')
+        asm_file.write(f'\tldr r6, [r10, #AK_ADSRVALUES+24*{adsr_instance}+4*3]\t; sustainLength\n')
+        asm_file.write(f'\tcmp r5, r6\n')
+        asm_file.write(f'\tmovgt r14, #ADSR_Release\n')
+        asm_file.write(f'\tb ADSR_End_{self._inst_nr}_{self._instance}\n\n')
+
+        asm_file.write(f'ADSR_R_{self._inst_nr}_{self._instance}:\t; Release\n')
+        # asm_file.write(f'\tmov r5, #{releaseAmount}\n')
+        asm_file.write(f'\tldr r5, [r10, #AK_ADSRVALUES+24*{adsr_instance}+4*4]\t; releaseAmount\n')
+        asm_file.write(f'\tsubs r4, r4, r5\n')
+        asm_file.write(f'\tmovle r4, #0\n\n')
+
+        asm_file.write(f'ADSR_End_{self._inst_nr}_{self._instance}:\n')
+        asm_file.write(f'\tstr r4, [r10, #AK_OPINSTANCE+4*{self._instance}]\t; val\n')
+        asm_file.write(f'\tstrb r14, [r10, #AK_OPINSTANCE+4*{self._instance+1}]\t; mode\n')
+        asm_file.write(f'\tmov r{var-1}, r4, asr #8\n')
+
+        self._instance+=3
+
 
     def ParseHeader(self):
         while True:
@@ -742,15 +811,16 @@ class AkpParser:
             if header != '\n':
                 break
 
-        inst_nr=0
+        self._inst_nr=0
         self._max_instances=0
         self._max_dvalues=0
         self._max_buffers=0
         self._buffers=0
 
         self._instruments=[]
+        self._adsr_values=[]
         
-        while inst_nr < 32:
+        while self._inst_nr < 32:
             def_line=self._akp_file.readline()
             #print(def_line)
             name_delimiter=def_line.find(",")
@@ -762,14 +832,14 @@ class AkpParser:
             if inst_def is None:
                 break
 
-            inst_nr+=1
+            self._inst_nr+=1
 
             self._instruments.append([inst_def['len']])
        
-            print(f"Instrument {inst_nr} '{name_string}'")  #{inst_def['name']}'")
+            print(f"Instrument {self._inst_nr} '{name_string}'")  #{inst_def['name']}'")
 
             asm_file.write(f';----------------------------------------------------------------------------\n')
-            asm_file.write(f"; Instrument {inst_nr} - '{name_string}'\n") # inst_def['name']}\n")
+            asm_file.write(f"; Instrument {self._inst_nr} - '{name_string}'\n") # inst_def['name']}\n")
             asm_file.write(f';----------------------------------------------------------------------------\n\n')
 
             self._akp_file.readline()       # swallow hash line
@@ -778,9 +848,9 @@ class AkpParser:
             asm_file.write(f'\tbl AK_ResetVars\n')
             asm_file.write(f'\tmov r7, #0\t; Sample byte count\n')
             asm_file.write(f'\tAK_PROGRESS\n\n')
-            asm_file.write(f'Inst{inst_nr}Loop:\n')
+            asm_file.write(f'Inst{self._inst_nr}Loop:\n')
 
-            if DEBUG_INSTRUMENT==inst_nr:
+            if DEBUG_INSTRUMENT==self._inst_nr:
                 asm_file.write(f'\tmov r14, #{DEBUG_SAMPLE}\n')
                 asm_file.write(f'\tcmp r7, r14\n')
                 asm_file.write(f'\tbne .1\n')
@@ -843,6 +913,8 @@ class AkpParser:
                     self.func_distortion(asm_file, cmd_def[0], cmd_def[2])
                 elif cmd_def[1]=='onepole_flt':
                     self.func_onepole_flt(asm_file, cmd_def[0], cmd_def[2])
+                elif cmd_def[1]=='adsr':
+                    self.func_adsr(asm_file, cmd_def[0], cmd_def[2])
                 else:
                     print(f"WARNING: Unimplemented node command '{cmd_def[1]}'")
                     asm_file.write(f"; TODO: Implement node command '{cmd_def[1]}'.\n")
@@ -872,17 +944,17 @@ class AkpParser:
             #asm_file.write(f'\t.endif\n')
             asm_file.write(f'\t\nAK_FINE_PROGRESS\n\n')
             asm_file.write(f'\tadd r7, r7, #1\n')
-            asm_file.write(f'\tldr r4, [r10, #AK_SMPLEN+4*{inst_nr-1}]\n')
+            asm_file.write(f'\tldr r4, [r10, #AK_SMPLEN+4*{self._inst_nr-1}]\n')
             asm_file.write(f'\tcmp r7, r4\n')
-            asm_file.write(f'\tblt Inst{inst_nr}Loop\n\n')
+            asm_file.write(f'\tblt Inst{self._inst_nr}Loop\n\n')
 
             if inst_def['loop']=='Y':
                 asm_file.write(f';----------------------------------------------------------------------------\n')
-                asm_file.write(f"; Instrument {inst_nr} - Loop Generator (Offset: {inst_def['rep_off']} Length: {inst_def['rep_len']})\n")
+                asm_file.write(f"; Instrument {self._inst_nr} - Loop Generator (Offset: {inst_def['rep_off']} Length: {inst_def['rep_len']})\n")
                 asm_file.write(f';----------------------------------------------------------------------------\n\n')
 
                 asm_file.write(f"\tmov r7, #{inst_def['rep_len']}\n")
-                asm_file.write(f'\tldr r6, [r10, #AK_SMPADDR+4*{inst_nr-1}]\n')
+                asm_file.write(f'\tldr r6, [r10, #AK_SMPADDR+4*{self._inst_nr-1}]\n')
                 asm_file.write(f"\tadd r6, r6, #{inst_def['rep_off']}\t; src1\n")
                 asm_file.write(f'\tsub r4, r6, r7\t; src2\n')
                 asm_file.write(f'\tmov r0, r11, lsl #8\t; 32767<<8\n')
@@ -891,7 +963,7 @@ class AkpParser:
                 asm_file.write(f'\tmov r5, r0\t; delta = divs.w(32767<<8,repeat_length)\n')
                 asm_file.write(f'\tmov r14, #0\t; rampup\n')
                 asm_file.write(f'\tmov r12, r11, lsl #8\t; rampdown\n')
-                asm_file.write(f"LoopGen_{inst_nr}:\n")
+                asm_file.write(f"LoopGen_{self._inst_nr}:\n")
                 asm_file.write(f'\tmov r3, r14, lsr #8\n')
                 asm_file.write(f'\tmov r2, r12, lsr #8\n')
 
@@ -917,11 +989,11 @@ class AkpParser:
                 asm_file.write(f'\tsub r12, r12, r5\n')
                 asm_file.write(f'\t; TODO: Fine progress.\n')
                 asm_file.write(f'\tsubs r7, r7, #1\n')
-                asm_file.write(f"\tbne LoopGen_{inst_nr}\n\n")
+                asm_file.write(f"\tbne LoopGen_{self._inst_nr}\n\n")
 
 
-        print(f'{inst_nr} total instruments.')
-        assert(inst_nr==self._num_instruments)
+        print(f'{self._inst_nr} total instruments.')
+        assert(self._inst_nr==self._num_instruments)
 
         print(f'{self._total_smp_len} total sample size.')
         print(f'{self._total_ext_smp_len} external sample size.')
@@ -1003,6 +1075,22 @@ class AkpParser:
         asm_file.write('AK_EnvDValue:\n\t; NB. Must follow AK_OpInstance!\n')
         asm_file.write(f'\t.skip {self._max_dvalues}*4\n')
 
+        if len(self._adsr_values) > 0:
+            asm_file.write('AK_ADSRValues:\n')
+            for params in self._adsr_values:
+                attackAmount=params[1]
+                decayAmount=params[2]
+                sustainLevel=params[3]
+                sustainLength=params[4]
+                releaseAmount=params[5]
+                peak=params[6]
+                asm_file.write(f'\t.long {attackAmount}\t; attackAmount\n')
+                asm_file.write(f'\t.long {decayAmount}\t; decayAmount\n')
+                asm_file.write(f'\t.long {sustainLevel}\t; sustainLevel\n')
+                asm_file.write(f'\t.long {sustainLength}\t; sustainLength\n')
+                asm_file.write(f'\t.long {releaseAmount}\t; releaseAmount\n')
+                asm_file.write(f'\t.long {peak}\t; peak\n')
+
         asm_file.write('\n; ============================================================================\n')
 
 
@@ -1024,13 +1112,19 @@ class AkpParser:
         asm_file.write('.equ AK_CHORD2,\t\t\t1\n')
         asm_file.write('.equ AK_CHORD3,\t\t\t2\n\n')
 
+        asm_file.write('.equ ADSR_Attack,\t\t\t0\n')
+        asm_file.write('.equ ADSR_Decay,\t\t\t1\n')
+        asm_file.write('.equ ADSR_Sustain,\t\t\t2\n')
+        asm_file.write('.equ ADSR_Release,\t\t\t3\n\n')
+
         asm_file.write('.equ AK_SMPLEN,\t\t\t(AK_SmpLen-AK_Vars)\n')
         asm_file.write('.equ AK_EXTSMPLEN,\t\t(AK_ExtSmpLen-AK_Vars)\n')
         asm_file.write('.equ AK_NOISESEEDS,\t\t(AK_NoiseSeeds-AK_Vars)\n')
         asm_file.write('.equ AK_SMPADDR,\t\t(AK_SmpAddr-AK_Vars)\n')
         asm_file.write('.equ AK_EXTSMPADDR,\t\t(AK_ExtSmpAddr-AK_Vars)\n')
         asm_file.write('.equ AK_OPINSTANCE,\t\t(AK_OpInstance-AK_Vars)\n')
-        asm_file.write('.equ AK_ENVDVALUE,\t\t(AK_EnvDValue-AK_Vars)\n\n')
+        asm_file.write('.equ AK_ENVDVALUE,\t\t(AK_EnvDValue-AK_Vars)\n')
+        asm_file.write('.equ AK_ADSRVALUES,\t\t(AK_ADSRValues-AK_Vars)\n\n')
 
         asm_file.write(f'.equ AK_SMP_LEN,\t\t{self._total_smp_len}\n')
         asm_file.write(f'.equ AK_EXT_SMP_LEN,\t{self._total_ext_smp_len}\n\n')
