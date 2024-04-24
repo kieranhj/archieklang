@@ -29,10 +29,12 @@ TODO:
     - Virgill-atariklang.mod -                  MISSING LAST THREE NODES
     - Virgill-colombia.mod -                    BUILT: 3/25 errors > 1
     - Virgill-mothership.mod -                  BUILT: 4/20 errors > 1
-    - Virgill-nihil admirari.mod -              MISSING LAST THREE NODES
+    - Virgill-nihil admirari.mod -              BUILT: PASSED!
     - Virgill-redrum redrum.mod -               BUILT: 4/27 errors > 1
 - Implement 16-bit linear to 8-bit log conversion.
 - Smaller code implementation w/ parameterised fn calls rather than inline.
 - Tidy up documentation
 - Replacement aklang2asm.bat for Archie - IN PROGRESS
 - Contact Virgill - IN PROGRESS
+
+DEBUG DISTORTION!

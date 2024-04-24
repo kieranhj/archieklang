@@ -7,7 +7,7 @@ import os
 import struct
 from parse import *
 
-DEBUG_INSTRUMENT=0
+DEBUG_INSTRUMENT=2
 DEBUG_SAMPLE=0
 
 DECAY_TABLE = [32767, 32767, 32767, 16384, 10922, 8192, 6553, 4681, 3640, 2978, 2520, 2048, 1724, 1489, 1310, 1129, 992, 885, 799, 712, 642, 585, 537, 489, 448, 414, 385, 356, 330, 309, 289, 270, 254, 239, 225, 212, 201, 190, 181, 171, 163, 155, 148, 141, 134, 129, 123, 118, 113, 108, 104, 100, 96, 93, 89, 86, 83, 80, 77, 75, 72, 70, 68, 65, 63, 61, 60, 58, 56, 54, 53, 51, 50, 49, 47, 46, 45, 44, 43, 41, 40, 39, 38, 38, 37, 36, 35, 34, 33, 33, 32, 31, 30, 30, 29, 29, 28, 27, 27, 26, 26, 25, 25, 24, 24, 23, 23, 22, 22, 22, 21, 21, 20, 20, 20, 19, 19, 19, 18, 18, 18, 17, 17, 17, 17, 16, 16, 16]
@@ -37,7 +37,9 @@ class AkpParser:
                 asm_file.write(f'\t; r{dst_var-1} = vol(r{src_var-1}, v{gain_V[0]})\n')
             else:
                 asm_file.write(f'\t; v{dst_var} = vol(v{src_var}, v{gain_V[0]})\n')
+
             asm_file.write(f'\tand r14, r{gain_V[0]-1}, #0xff\n')
+
             asm_file.write(f'\tmul r{dst_var-1}, r14, r{src_var-1}\n')
             asm_file.write(f'\tmov r{dst_var-1}, r{dst_var-1}, asr #7\n')
             self.sign_extend(asm_file, dst_var-1)
@@ -69,6 +71,7 @@ class AkpParser:
                 asm_file.write(f'\tmov r14, #{gain_C[0]}\n')
                 asm_file.write(f'\tmul r{dst_var-1}, r14, r{src_var-1}\n')
                 asm_file.write(f'\tmov r{dst_var-1}, r{dst_var-1}, asr #7\n')
+                self.sign_extend(asm_file, dst_var-1)
 
     def vol(self, asm_file, var, gain_V, gain_C):
         self.vol_var(asm_file, var, var, gain_V, gain_C)
@@ -629,6 +632,69 @@ class AkpParser:
         self.clamp(asm_file, var)
         self._instance+=3
 
+    def func_distortion(self, asm_file, var, param_string):
+        param_strings=parse("{}, {}", param_string)
+
+        val_V=parse("v{:d}", param_strings[0])        
+        if val_V is None:
+            print('WARNING: Expected a var not a const!')
+        gain_V=parse("v{:d}", param_strings[1])        
+        gain_C=parse("{:d}", param_strings[1])        
+
+        if gain_V is not None:
+            # TODO: Potential register clash.
+            asm_file.write(f'\tmul r14, r{val_V[0]-1}, r{gain_V[0]-1}\n')
+        else:
+            asm_file.write(f'\tmov r14, #{gain_C[0]}\n')
+            asm_file.write(f'\tmul r14, r{val_V[0]-1}, r14\n')
+
+        asm_file.write(f'\tmov r14, r14, asr #5\n')
+        self.clamp(asm_file, 15)
+        asm_file.write(f'\tmov r14, r14, asr #1\n')
+
+        asm_file.write(f'\tmovs r4, r14\n')
+        asm_file.write(f'\trsbmi r4, r4, #0\t; abs(val)\n')
+        asm_file.write(f'\tsub r4, r11, r4\n')
+        asm_file.write(f'\tmul r4, r14, r4\n')
+        asm_file.write(f'\tmov r4, r4, asr #16\n')
+        asm_file.write(f'\tmov r{var-1}, r4, asl #3\n')
+
+    def func_onepole_flt(self, asm_file, var, param_string):
+        param_strings=parse("{:d}, {}, {}, {}", param_string)
+
+        val_V=parse("v{:d}", param_strings[1])
+        if val_V is None:
+            print('WARNING: Expected a var not a const!')
+        cutoff_V=parse("v{:d}", param_strings[2])
+        cutoff_C=parse("{:d}", param_strings[2])
+        mode=parse("{:d}", param_strings[3])[0]
+
+        asm_file.write(f'\tldr r4, [r10, #AK_OPINSTANCE+4*{self._instance}]\t; pole\n')
+        asm_file.write(f'\tmov r6, r4, asr #7\n')
+        asm_file.write(f'\tmov r14, r{val_V[0]-1}, asr #7\n')
+
+        if cutoff_V is not None:
+            asm_file.write(f'\tmul r5, r{cutoff_V[0]-1}, r14\n')
+            asm_file.write(f'\tmul r6, r{cutoff_V[0]-1}, r6\n')
+        else:
+            asm_file.write(f'\tmov r12, #{cutoff_C[0]}\n')
+            asm_file.write(f'\tmul r5, r12, r14\n')
+            asm_file.write(f'\tmul r6, r12, r6\n')
+    
+        asm_file.write(f'\tsub r4, r4, r6\n')
+        asm_file.write(f'\tadd r4, r4, r5\n')
+        self.clamp(asm_file, 5)
+        asm_file.write(f'\tstr r4, [r10, #AK_OPINSTANCE+4*{self._instance}]\t; pole\n')
+
+        if mode==0:
+            asm_file.write(f'\tmov r{var-1}, r4\n')
+        elif mode==1:
+            asm_file.write(f'\tsub r{var-1}, r{val_V[0]-1}, r4\n')
+        else:
+            asm_file.write(f'\tmov r{var-1}, #0\n')
+
+        self._instance+=1
+
 
     def ParseHeader(self):
         while True:
@@ -773,6 +839,10 @@ class AkpParser:
                     self.func_imported_sample(asm_file, cmd_def[0], cmd_def[2])
                 elif cmd_def[1]=='vol':
                     self.func_vol(asm_file, cmd_def[0], cmd_def[2])
+                elif cmd_def[1]=='distortion':
+                    self.func_distortion(asm_file, cmd_def[0], cmd_def[2])
+                elif cmd_def[1]=='onepole_flt':
+                    self.func_onepole_flt(asm_file, cmd_def[0], cmd_def[2])
                 else:
                     print(f"WARNING: Unimplemented node command '{cmd_def[1]}'")
                     asm_file.write(f"; TODO: Implement node command '{cmd_def[1]}'.\n")
