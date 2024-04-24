@@ -821,7 +821,7 @@ class AkpParser:
                 asm_file.write(f'\tmov r5, r0\t; delta = divs.w(32767<<8,repeat_length)\n')
                 asm_file.write(f'\tmov r14, #0\t; rampup\n')
                 asm_file.write(f'\tmov r12, r11, lsl #8\t; rampdown\n')
-                asm_file.write(f"LoopGen_{inst_nr-1}:\n")
+                asm_file.write(f"LoopGen_{inst_nr}:\n")
                 asm_file.write(f'\tmov r3, r14, lsr #8\n')
                 asm_file.write(f'\tmov r2, r12, lsr #8\n')
 
@@ -847,7 +847,7 @@ class AkpParser:
                 asm_file.write(f'\tsub r12, r12, r5\n')
                 asm_file.write(f'\t; TODO: Fine progress.\n')
                 asm_file.write(f'\tsubs r7, r7, #1\n')
-                asm_file.write(f"\tbne LoopGen_{inst_nr-1}\n\n")
+                asm_file.write(f"\tbne LoopGen_{inst_nr}\n\n")
 
 
         print(f'{inst_nr} total instruments.')

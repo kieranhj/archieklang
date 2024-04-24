@@ -11,10 +11,28 @@ E.g. in Chord Gen there is a shift (offset) value - this can easily go off the e
 
 TODO:
 - Implement remaining nodes
-- Implement external samples
-- Test all example MODs
+    - Distortion
+    - 1-pole filter
+    - ADSR envelope
+- Implement external samples - DONE
+- Test all example MODs - IN PROGRESS
+    - calcpreculation.mod -                     BUILT: 3/26 errors > 1
+    - JosSs-Cream.mod -                         BUILT: 0/21 errors > 1
+    - JosSs-DualPanoply.mod -                   BUILT: 6/28 errors > 1
+    - juice-tremors.mod -                       BUILT: 4/17 errors > 1
+    - nah-kolor 'on fire'.mod -                 BUILT: 1/28 errors > 1
+    - optimal workflow.mod -                    BUILT: 3/28 errors > 1
+    - tecon-disco transmission.mod -            BUILT: 6/31 errors > 1
+    - Virgill&Maze-national waffle day.mod -    MISSING LAST THREE NODES
+    - Virgill-80s architecture.mod -            MISSING LAST THREE NODES
+    - Virgill-amigahub.mod -                    BUILT: 1/25 errors > 1
+    - Virgill-atariklang.mod -                  MISSING LAST THREE NODES
+    - Virgill-colombia.mod -                    BUILT: 3/25 errors > 1
+    - Virgill-mothership.mod -                  BUILT: 4/20 errors > 1
+    - Virgill-nihil admirari.mod -              MISSING LAST THREE NODES
+    - Virgill-redrum redrum.mod -               BUILT: 4/27 errors > 1
 - Implement 16-bit linear to 8-bit log conversion.
 - Smaller code implementation w/ parameterised fn calls rather than inline.
 - Tidy up documentation
-- Replacement aklang2asm.bat for Archie
-- Contact Virgill
+- Replacement aklang2asm.bat for Archie - IN PROGRESS
+- Contact Virgill - IN PROGRESS

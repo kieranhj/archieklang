@@ -12,7 +12,7 @@ if "%1"=="" (
 echo Splitting MOD '%1'...
 copy "songs\%1" build
 
-bin\SplitMod.exe build\%1
+bin\SplitMod.exe "build\%1"
 
 if %ERRORLEVEL% neq 0 (
 	echo Failed to split MOD.

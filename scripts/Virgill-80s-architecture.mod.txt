@@ -1,0 +1,251 @@
+0, 0, 0, 0, 0, 0, 0, 0
+$ aklang fmbass1, 4096, 4094, 2, N
+#
+v2 = osc_tri(0, 220, 35);
+v1 = envd(1, 11, 29, 30);
+v2 = mul(v1, v2);
+v1 = osc_sine(3, v2, 128);
+v2 = osc_tri(4, 445, 128);
+v1 = add(v1, v2);
+v3 = envd(6, 11, 0, 128);
+v1 = mul(v1, v3);
+
+$ aklang fmbass2, 4096, 4094, 2, N
+#
+v2 = osc_tri(0, 220, 52);
+v1 = envd(1, 11, 29, 30);
+v2 = mul(v1, v2);
+v1 = osc_sine(3, v2, 128);
+v2 = osc_tri(4, 445, 128);
+v1 = add(v1, v2);
+v3 = envd(6, 11, 0, 128);
+v1 = mul(v1, v3);
+
+$ aklang fmbass3, 4096, 4094, 2, N
+#
+v2 = osc_tri(0, 220, 83);
+v1 = envd(1, 19, 29, 30);
+v2 = mul(v1, v2);
+v1 = osc_sine(3, v2, 128);
+v2 = osc_tri(4, 445, 128);
+v1 = add(v1, v2);
+v3 = envd(6, 11, 0, 128);
+v1 = mul(v1, v3);
+
+$ aklang fmbass4, 4096, 4094, 2, N
+#
+v2 = osc_tri(0, 220, 21);
+v1 = envd(1, 9, 29, 30);
+v2 = mul(v1, v2);
+v1 = osc_sine(3, v2, 128);
+v2 = osc_tri(4, 445, 128);
+v1 = add(v1, v2);
+v3 = envd(6, 11, 0, 128);
+v1 = mul(v1, v3);
+
+$ aklang fmbass1+8, 4096, 4094, 2, N
+#
+v1 = clone(smp,0, 0);
+v3 = envd(1, 11, 0, 128);
+v2 = osc_saw(2, 1402, 90);
+v4 = osc_saw(3, 1414, 90);
+v2 = add(v2, v4);
+v2 = mul(v3, v2);
+v2 = onepole_flt(6, v2, 50, 1);
+v1 = add(v1, v2);
+
+$ Instrument_6, 2, 0, 2, N
+#
+
+$ aklang fmbass1+7, 4096, 4094, 2, N
+#
+v1 = clone(smp,0, 0);
+v3 = envd(1, 11, 0, 128);
+v2 = osc_saw(2, 1314, 90);
+v4 = osc_saw(3, 1325, 90);
+v2 = add(v2, v4);
+v2 = mul(v3, v2);
+v2 = onepole_flt(6, v2, 50, 1);
+v1 = add(v1, v2);
+
+$ aklang fmbass3+7, 4096, 4094, 2, N
+#
+v1 = clone(smp,2, 0);
+v3 = envd(1, 11, 0, 128);
+v2 = osc_saw(2, 1314, 90);
+v4 = osc_saw(3, 1324, 90);
+v2 = add(v2, v4);
+v2 = mul(v3, v2);
+v2 = onepole_flt(6, v2, 50, 1);
+v1 = add(v1, v2);
+
+$ aklang fmbass1+12, 4096, 4094, 2, N
+#
+v1 = clone(smp,0, 0);
+v3 = envd(1, 11, 0, 128);
+v2 = osc_saw(2, 880, 90);
+v4 = osc_saw(3, 1752, 90);
+v2 = add(v2, v4);
+v2 = mul(v3, v2);
+v2 = onepole_flt(6, v2, 50, 1);
+v1 = add(v1, v2);
+
+$ aklang fmbass2+12, 4096, 4094, 2, N
+#
+v1 = clone(smp,1, 0);
+v3 = envd(1, 11, 0, 128);
+v2 = osc_saw(2, 880, 90);
+v4 = osc_saw(3, 1753, 90);
+v2 = add(v2, v4);
+v2 = mul(v3, v2);
+v2 = onepole_flt(6, v2, 50, 1);
+v1 = add(v1, v2);
+
+$ aklang fmbass3+12, 4096, 4094, 2, N
+#
+v1 = clone(smp,2, 0);
+v3 = envd(1, 11, 0, 128);
+v2 = osc_saw(2, 884, 90);
+v4 = osc_saw(3, 876, 90);
+v2 = add(v2, v4);
+v2 = mul(v3, v2);
+v2 = onepole_flt(6, v2, 50, 1);
+v1 = add(v1, v2);
+
+$ aklang fmbass4+12, 4096, 4094, 2, N
+#
+v1 = clone(smp,3, 0);
+v3 = envd(1, 11, 0, 128);
+v2 = osc_saw(2, 886, 90);
+v4 = osc_saw(3, 874, 90);
+v2 = add(v2, v4);
+v2 = mul(v3, v2);
+v2 = onepole_flt(6, v2, 50, 1);
+v1 = add(v1, v2);
+
+$ aklang lead, 24576, 14336, 10240, Y
+#
+v1 = osc_saw(0, 693, 64);
+v2 = osc_saw(1, 700, 63);
+v1 = add(v1, v2);
+v2 = osc_saw(3, 2786, 51);
+v1 = add(v1, v2);
+v2 = osc_saw(5, 2800, 50);
+v1 = add(v1, v2);
+v3 = envd(7, 16, 26, 128);
+v3 = mul(v3, 128);
+v1 = sv_flt_n(9, v1, v3, 127, 0);
+v1 = vol(v1, 112);
+
+$ chord1, 12288, 6784, 5504, Y
+#
+v1 = chordgen(0, 12, 4, 7, 12, 100);
+
+$ chord2, 12288, 6784, 5504, Y
+#
+v1 = chordgen(0, 12, 5, 7, 12, 24);
+
+$ chord3, 12288, 6784, 5504, Y
+#
+v1 = chordgen(0, 12, 2, 7, 11, 35);
+
+$ chord4, 12288, 6784, 5504, Y
+#
+v1 = chordgen(0, 12, 3, 8, 12, 46);
+
+$ aklang hat short, 112, 110, 2, N
+#
+v1 = osc_noise(32);
+v1 = sv_flt_n(1, v1, 127, 0, 1);
+
+$ aklang hat bpf, 3072, 1536, 1536, N
+#
+v2 = osc_noise(48);
+v2 = add(v2, 12822);
+v1 = osc_sine(2, v2, 20);
+v1 = sv_flt_n(3, v1, 127, 127, 1);
+v2 = envd(4, 10, 0, 128);
+v1 = mul(v1, v2);
+v2 = clone(smp,17, 0);
+v1 = add(v1, v2);
+
+$ aklang shortsaw hpf, 5120, 5118, 2, N
+#
+v1 = osc_saw(0, 875, 64);
+v2 = osc_saw(1, 885, 106);
+v1 = add(v1, v2);
+v2 = envd(3, 13, 0, 128);
+v1 = mul(v1, v2);
+v1 = onepole_flt(5, v1, 44, 1);
+
+$ aklang kick1, 3072, 2048, 1024, N
+#
+v2 = adsr(0, 589806, 2151, 36864, 2813, 36864, 589806);
+v3 = envd(1, 7, 0, 2);
+v2 = add(v2, v3);
+v1 = osc_sine(3, v2, 128);
+v2 = envd(4, 9, 0, 128);
+v1 = mul(v1, v2);
+v1 = distortion(v1, 44);
+v2 = clone(smp,18, 0);
+v2 = sv_flt_n(8, v2, 60, 3, 2);
+v1 = add(v1, v2);
+v2 = clone(smp,17, 0);
+v1 = add(v1, v2);
+
+$ aklang kick2, 3072, 2048, 1024, N
+#
+v1 = clone(smp,20, 268);
+v1 = sv_flt_n(1, v1, 60, 16, 0);
+v2 = clone(smp,17, 0);
+v1 = add(v1, v2);
+
+$ aklang snare, 5376, 5118, 258, N
+#
+v1 = osc_noise(128);
+v2 = envd(1, 18, 0, 59);
+v2 = mul(v2, 128);
+v1 = sv_flt_n(3, v1, v2, 50, 0);
+v2 = osc_noise(38);
+v2 = sv_flt_n(5, v2, 67, 13, 1);
+v1 = add(v1, v2);
+v3 = envd(7, 15, 0, 128);
+v1 = mul(v1, v3);
+v2 = clone(smp,20, 0);
+v2 = onepole_flt(10, v2, 14, 1);
+v1 = add(v1, v2);
+v1 = sv_flt_n(12, v1, 127, 127, 0);
+
+$ aklang snare lpf1, 5120, 3078, 2042, N
+#
+v1 = clone(smp,22, 0);
+v1 = sv_flt_n(1, v1, 42, 64, 0);
+v2 = clone(smp,17, 0);
+v1 = add(v1, v2);
+
+$ aklang snare lpf2, 5120, 3078, 2042, N
+#
+v1 = clone(smp,22, 0);
+v1 = sv_flt_n(1, v1, 24, 50, 0);
+v2 = clone(smp,17, 0);
+v1 = add(v1, v2);
+
+$ aklang pling reverb, 16384, 8486, 7898, Y
+#
+v1 = clone(smp,12, 2048);
+v2 = envd(1, 8, 0, 128);
+v1 = mul(v1, v2);
+v1 = reverb(v1, 122, 30);
+
+$ aklang lead lpf sweep, 16384, 8268, 8116, Y
+#
+v1 = osc_saw(0, 1388, 64);
+v2 = osc_saw(1, 1398, 63);
+v1 = add(v1, v2);
+v2 = osc_saw(3, 2793, 76);
+v1 = add(v1, v2);
+v3 = enva(5, 16, 0, 128);
+v3 = mul(v3, 128);
+v1 = sv_flt_n(7, v1, v3, 127, 0);
+v1 = vol(v1, 112);
+

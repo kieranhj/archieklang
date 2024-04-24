@@ -1,0 +1,142 @@
+2280, 6936, 3866, 4678, 1058, 1610, 2130, 3696
+$ Mothership_Kick, 2270, 1756, 514, N
+#
+v1 = imported_sample(smp,0);
+
+$ Mothership_Snare, 8192, 6934, 1258, N
+#
+v1 = imported_sample(smp,1);
+v2 = sv_flt_n(1, v1, 127, 127, 1);
+v2 = reverb(v2, 72, 8);
+v1 = add(v1, v2);
+
+$ Mothership_MegaKick, 3776, 3646, 130, N
+#
+v1 = clone(smp,0, 62);
+v2 = sv_flt_n(1, v1, 2, 0, 2);
+v1 = vol(v1, 103);
+v1 = add(v1, v2);
+
+$ Mothership_FxSnare, 3866, 3864, 2, N
+#
+v1 = imported_sample(smp,2);
+
+$ Mothership_FxKick, 6656, 4676, 1980, N
+#
+v1 = imported_sample(smp,3);
+v2 = sv_flt_n(1, v1, 127, 127, 1);
+v2 = reverb(v2, 72, 12);
+v1 = add(v1, v2);
+
+$ Mothership_Fx, 7168, 3734, 3434, N
+#
+v1 = clone(smp,4, 1098);
+v1 = sv_flt_n(1, v1, 12, 127, 1);
+v1 = reverb(v1, 68, 16);
+
+$ Mothership_Hat1, 1088, 544, 544, N
+#
+v1 = imported_sample(smp,4);
+v1 = sv_flt_n(1, v1, 42, 127, 1);
+
+$ Mothership_Hat2, 1616, 896, 720, N
+#
+v1 = imported_sample(smp,5);
+v1 = sv_flt_n(1, v1, 40, 127, 1);
+
+$ Mothership_HatOpen, 9472, 4736, 4736, N
+#
+v1 = imported_sample(smp,6);
+v1 = sv_flt_n(1, v1, 72, 127, 1);
+v1 = reverb(v1, 112, 16);
+v1 = sv_flt_n(3, v1, 79, 127, 1);
+
+$ Mothership_Hat3, 1280, 1278, 2, N
+#
+v1 = clone(smp,0, 0);
+v1 = reverb(v1, 127, 16);
+v1 = sv_flt_n(2, v1, 89, 127, 1);
+v2 = envd(3, 6, 0, 127);
+v1 = mul(v1, v2);
+v1 = sv_flt_n(5, v1, 74, 127, 1);
+
+$ Mothership_Distort1, 2176, 1088, 1088, N
+#
+v1 = clone(smp,0, 0);
+v1 = sv_flt_n(1, v1, 2, 20, 1);
+v1 = vol(v1, 224);
+v2 = envd(3, 8, 0, 127);
+v1 = mul(v1, v2);
+
+$ Mothership_Distort2, 2176, 1088, 1088, N
+#
+v1 = clone(smp,10, 0);
+v1 = sv_flt_n(1, v1, 48, 127, 0);
+
+$ Mothership_Distort3, 2176, 1120, 1056, N
+#
+v1 = clone(smp,10, 0);
+v1 = sv_flt_n(1, v1, 24, 127, 0);
+
+$ Mothership_Pling1, 4096, 2156, 1940, Y
+#
+v1 = osc_saw(0, 2048, 127);
+v2 = osc_tri(1, 1022, 127);
+v1 = vol(v1, v2);
+v1 = sv_flt_n(3, v1, 20, 0, 2);
+v2 = envd(4, 6, 0, 127);
+v1 = mul(v1, v2);
+v1 = reverb(v1, 88, 16);
+
+$ Mothership_Pling2, 4096, 2156, 1940, Y
+#
+v1 = osc_saw(0, 2048, 127);
+v2 = osc_tri(1, 1023, 127);
+v1 = vol(v1, v2);
+v1 = sv_flt_n(3, v1, 20, 0, 2);
+v2 = envd(4, 6, 0, 127);
+v1 = mul(v1, v2);
+v1 = reverb(v1, 88, 16);
+
+$ Mothership_Pling3, 4096, 2104, 1992, Y
+#
+v1 = osc_saw(0, 2048, 127);
+v2 = osc_tri(1, 2047, 127);
+v1 = vol(v1, v2);
+v1 = sv_flt_n(3, v1, 20, 0, 2);
+v2 = envd(4, 6, 0, 127);
+v1 = mul(v1, v2);
+v1 = reverb(v1, 88, 16);
+
+$ Mothership_Lead, 8192, 4096, 4096, Y
+#
+v1 = osc_saw(0, 2048, 127);
+v2 = osc_saw(1, 258, 127);
+v1 = vol(v1, v2);
+v1 = sv_flt_n(3, v1, 20, 0, 2);
+v2 = envd(4, 8, 0, 127);
+
+$ Mothership_Chord1, 5712, 2855, 2857, Y
+#
+v1 = chordgen(0, 16, 3, 7, 0, 0);
+
+$ Mothership_Bass, 8832, 4416, 4416, Y
+#
+v1 = osc_saw(0, 152, 96);
+v2 = osc_saw(1, 148, 83);
+v1 = add(v1, v2);
+v2 = osc_pulse(3, 150, 68, 63);
+v1 = add(v1, v2);
+v1 = cmb_flt_n(5, v1, 237, 88, 127);
+v2 = envd(6, 9, 0, 32);
+v2 = mul(v2, 128);
+v2 = add(v2, 12);
+v1 = sv_flt_n(9, v1, v2, 20, 0);
+v2 = osc_sine(10, 1200, 36);
+v1 = add(v1, v2);
+
+$ Mothership_BassFilter, 6656, 3328, 3328, Y
+#
+v1 = clone(smp,18, 2192);
+v1 = sv_flt_n(1, v1, 29, 12, 1);
+

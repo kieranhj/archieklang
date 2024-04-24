@@ -1,0 +1,213 @@
+4368, 2124, 3956, 2688, 3412, 1672, 2736, 0
+$ Virgill_PM_String, 49152, 24576, 24576, Y
+#
+v1 = osc_noise(127);
+v1 = sv_flt_n(1, v1, v3, 127, 0);
+v1 = sv_flt_n(2, v1, 4, 127, 1);
+v4 = mul(v1, -16385);
+v1 = add(v1, v2);
+v2 = dly_cyc(5, v1, 50, 127);
+v3 = enva(6, 31, 0, 127);
+v3 = mul(v3, 15);
+v3 = add(v3, 3);
+v1 = sv_flt_n(9, v1, 1, 127, 1);
+v1 = add(v1, v4);
+v4 = osc_tri(11, 2631, 16);
+v1 = add(v1, v4);
+
+$ Virgill_PM_Chord1, 24576, 13818, 10758, Y
+#
+v1 = chordgen(0, 0, 2, 3, 12, 110);
+v2 = osc_sine(1, 335, 42);
+v1 = add(v1, v2);
+
+$ Virgill_PM_Chord2, 27648, 13952, 13696, Y
+#
+v1 = chordgen(0, 0, 2, 3, 10, 110);
+v2 = osc_sine(1, 335, 42);
+v1 = add(v1, v2);
+
+$ Virgill_PM_Chord3, 27648, 13952, 13696, Y
+#
+v1 = chordgen(0, 0, 5, 7, 10, 110);
+v2 = osc_sine(1, 335, 42);
+v1 = add(v1, v2);
+
+$ Virgill_Deep_Brass2, 21532, 10765, 10767, Y
+#
+v1 = imported_sample(smp,0);
+v1 = reverb(v1, 121, 18);
+v1 = add(v1, v2);
+v2 = dly_cyc(3, v1, 177, 109);
+
+$ Virgill_PlingReverb2, 12800, 6400, 6400, Y
+#
+v1 = osc_saw(0, 1310, 92);
+v2 = envd(1, 8, 0, 127);
+v1 = mul(v1, v2);
+v1 = sv_flt_n(3, v1, 43, 53, 0);
+v1 = reverb(v1, 109, 39);
+
+$ Virgill_Loop_Kick_long, 12288, 7916, 4372, Y
+#
+v1 = imported_sample(smp,2);
+v2 = sv_flt_n(1, v1, 70, 127, 1);
+v2 = reverb(v2, 114, 26);
+v1 = add(v1, v2);
+
+$ Virgill_Loop_HH1, 2688, 1343, 1345, N
+#
+v1 = imported_sample(smp,3);
+
+$ Virgill_Loop_Klicker, 14080, 7418, 6662, Y
+#
+v1 = imported_sample(smp,4);
+v1 = reverb(v1, 110, 22);
+
+$ Virgill_Loop_HH2, 1672, 835, 837, N
+#
+v1 = imported_sample(smp,5);
+
+$ Virgill_Loop_Kick, 2736, 1367, 1369, N
+#
+v1 = imported_sample(smp,6);
+
+$ Virgill_BassStab1, 4394, 2196, 2198, N
+#
+v1 = clone(smp,10, 0);
+v1 = cmb_flt_n(1, v1, 237, 127, 127);
+
+$ Virgill_BassStab2, 4394, 4350, 44, N
+#
+v1 = clone(smp,11, 0);
+v1 = sv_flt_n(1, v1, 44, 22, 0);
+
+$ Virgill_BassStab3, 4646, 4350, 296, N
+#
+v1 = clone(smp,11, 0);
+v1 = sv_flt_n(1, v1, 42, 9, 1);
+
+$ Virgill_PlingReverb, 13312, 6810, 6502, Y
+#
+v1 = osc_saw(0, 1310, 92);
+v2 = envd(1, 8, 0, 127);
+v1 = mul(v1, v2);
+v1 = sv_flt_n(3, v1, 57, 53, 0);
+v1 = reverb(v1, 109, 39);
+
+$ Virgill_kicklongBass, 10496, 6144, 4352, N
+#
+v1 = clone(smp,6, 0);
+v2 = osc_saw(1, 192, 90);
+v1 = add(v1, v2);
+
+$ Virgill_kickshortbass, 8192, 5272, 2920, N
+#
+v1 = clone(smp,10, 0);
+v2 = osc_saw(1, 192, 90);
+v1 = add(v1, v2);
+
+$ Virgill_PlingFX1, 832, 576, 256, N
+#
+v1 = osc_saw(0, 768, 127);
+v2 = osc_tri(1, 744, 127);
+v1 = add(v1, v2);
+v1 = sv_flt_n(3, v1, 40, 7, 1);
+v2 = envd(4, 5, 0, 127);
+v1 = mul(v1, v2);
+
+$ Virgill_PlingFX2, 1152, 1022, 130, N
+#
+v1 = clone(smp,17, 0);
+v1 = cmb_flt_n(1, v1, 292, 77, 127);
+
+$ Virgill_Robovoice1, 6656, 3327, 3329, Y
+#
+v1 = osc_noise(127);
+v1 = sh(1, v1, 52);
+v2 = ctrl(v1);
+v2 = add(v2, 8);
+v1 = osc_saw(4, 1317, 127);
+v1 = sv_flt_n(5, v1, v2, 17, 2);
+v1 = cmb_flt_n(6, v1, 30, 88, 127);
+
+$ Virgill_Robovoice2, 6656, 3327, 3329, Y
+#
+v1 = osc_noise(127);
+v1 = sh(1, v1, 48);
+v2 = ctrl(v1);
+v2 = add(v2, 8);
+v1 = osc_saw(4, 1317, 127);
+v1 = sv_flt_n(5, v1, v2, 17, 2);
+v1 = cmb_flt_n(6, v1, 40, 88, 127);
+
+$ Virgill_Lead, 21970, 10984, 10986, Y
+#
+v1 = osc_saw(0, 1340, 90);
+v2 = osc_tri(1, 1343, 127);
+v1 = mul(v1, v2);
+v2 = osc_saw(3, 1352, 52);
+v1 = add(v1, v2);
+v3 = osc_sine(5, 7, 88);
+v3 = ctrl(v3);
+v3 = add(v3, -19);
+v1 = sv_flt_n(8, v1, v3, 64, 1);
+v2 = osc_tri(9, 1343, 46);
+v1 = add(v1, v2);
+
+$ Virgill_Chimes, 24576, 14926, 9650, Y
+#
+v1 = osc_noise(33);
+v1 = sh(1, v1, 24);
+v1 = mul(v1, v1);
+v1 = add(v1, v2);
+v1 = osc_tri(4, v1, 98);
+v2 = envd(5, 20, 25, 39);
+v1 = mul(v1, v2);
+v1 = sv_flt_n(7, v1, 20, 127, 1);
+v1 = reverb(v1, 122, 22);
+
+$ Virgill_Piano, 12288, 7710, 4578, Y
+#
+v1 = imported_sample(smp,1);
+v1 = reverb(v1, 127, 47);
+v2 = envd(2, 26, 0, 127);
+v1 = mul(v1, v2);
+
+$ Virgill_PM_BottleFlute1, 11776, 6144, 5632, Y
+#
+v1 = osc_noise(127);
+v2 = enva(1, 6, 0, 127);
+v1 = mul(v1, v2);
+v2 = envd(3, 8, 0, 127);
+v1 = mul(v1, v2);
+v4 = mul(v1, -16775);
+v1 = add(v1, v3);
+v3 = dly_cyc(7, v1, 43, 114);
+v3 = sv_flt_n(8, v3, 75, 127, 0);
+v3 = mul(v3, -32768);
+v1 = add(v1, v4);
+v1 = reverb(v1, 110, 30);
+
+$ Virgill_PM_BottleFlute2, 11776, 6144, 5632, Y
+#
+v1 = osc_noise(127);
+v2 = enva(1, 6, 0, 127);
+v1 = mul(v1, v2);
+v2 = envd(3, 8, 0, 127);
+v1 = mul(v1, v2);
+v4 = mul(v1, -16775);
+v1 = add(v1, v3);
+v3 = dly_cyc(7, v1, 43, 114);
+v3 = sv_flt_n(8, v3, 39, 127, 0);
+v3 = mul(v3, -32768);
+v1 = add(v1, v4);
+v1 = reverb(v1, 110, 30);
+
+$ Virgill_PlingFX3, 1024, 512, 512, N
+#
+v1 = clone(smp,17, 0);
+v1 = sv_flt_n(1, v1, 19, 0, 1);
+v2 = envd(2, 6, 0, 127);
+v1 = mul(v1, v2);
+

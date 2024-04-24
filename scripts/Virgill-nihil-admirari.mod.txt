@@ -1,0 +1,179 @@
+0, 0, 0, 0, 0, 0, 0, 0
+$ virgill_klick, 144, 126, 18, N
+#
+v1 = osc_noise(128);
+v1 = onepole_flt(1, v1, 68, 1);
+v1 = vol(v1, 255);
+v2 = envd(3, 2, 0, 128);
+v1 = mul(v1, v2);
+
+$ virgill_kick, 2048, 2046, 2, N
+#
+v2 = envd(0, 8, 0, 128);
+v2 = mul(v2, v2);
+v2 = mul(v2, v2);
+v2 = sv_flt_n(3, v2, 64, 8, 0);
+v3 = mul(v2, 823);
+v1 = osc_tri(5, v3, 128);
+v3 = osc_noise(5);
+v1 = add(v1, v3);
+v1 = mul(v1, v2);
+v2 = clone(smp,0, 0);
+v1 = add(v1, v2);
+v1 = distortion(v1, 127);
+
+$ virgill_kick+noise, 2048, 2046, 2, N
+#
+v2 = envd(0, 8, 0, 128);
+v2 = mul(v2, v2);
+v2 = mul(v2, v2);
+v2 = sv_flt_n(3, v2, 64, 8, 0);
+v3 = mul(v2, 823);
+v1 = osc_tri(5, v3, 128);
+v3 = osc_noise(28);
+v1 = add(v1, v3);
+v1 = mul(v1, v2);
+v2 = clone(smp,0, 0);
+v1 = add(v1, v2);
+v1 = distortion(v1, 127);
+
+$ virgill_bass1, 4352, 2176, 2176, N
+#
+v3 = osc_sine(0, v3, 127);
+v2 = osc_pulse(1, 255, 127, 70);
+v3 = add(v3, 3321);
+v3 = add(v3, v2);
+v1 = envd(4, 9, 0, 128);
+v1 = mul(v1, 64);
+v1 = sv_flt_n(6, v3, v1, 127, 0);
+v1 = onepole_flt(7, v1, 1, 1);
+v1 = reverb(v1, 80, 26);
+v2 = clone(smp,0, 0);
+v1 = add(v1, v2);
+
+$ virgill_bass2, 4352, 2176, 2176, N
+#
+v3 = osc_sine(0, v3, 127);
+v2 = osc_pulse(1, 255, 120, 42);
+v3 = add(v3, 3320);
+v3 = add(v3, v2);
+v1 = envd(4, 8, 0, 128);
+v1 = mul(v1, 64);
+v1 = sv_flt_n(6, v3, v1, 127, 0);
+v1 = onepole_flt(7, v1, 1, 1);
+v1 = reverb(v1, 78, 26);
+v2 = clone(smp,0, 0);
+v1 = add(v1, v2);
+
+$ virgill_bass3, 4352, 2176, 2176, N
+#
+v3 = osc_sine(0, v3, 127);
+v2 = osc_pulse(1, 255, 120, 70);
+v3 = add(v3, 3320);
+v3 = add(v3, v2);
+v1 = envd(4, 8, 0, 128);
+v1 = mul(v1, 64);
+v1 = sv_flt_n(6, v3, v1, 127, 0);
+v1 = onepole_flt(7, v1, 1, 1);
+v1 = reverb(v1, 78, 26);
+v2 = clone(smp,0, 0);
+v1 = add(v1, v2);
+
+$ virgill_bass4, 4352, 2176, 2176, N
+#
+v3 = osc_sine(0, v3, 127);
+v2 = osc_pulse(1, 255, 120, 116);
+v3 = add(v3, 3320);
+v3 = add(v3, v2);
+v1 = envd(4, 8, 0, 128);
+v1 = mul(v1, 64);
+v1 = sv_flt_n(6, v3, v1, 127, 0);
+v1 = onepole_flt(7, v1, 1, 1);
+v1 = reverb(v1, 78, 26);
+v2 = clone(smp,0, 0);
+v1 = add(v1, v2);
+
+$ virgill_noise, 2048, 2046, 2, N
+#
+v1 = osc_noise(128);
+v1 = sv_flt_n(1, v1, 48, 16, 2);
+
+$ virgill_chaos, 4096, 2047, 2049, N
+#
+v1 = osc_noise(16);
+v1 = sh(1, v1, 37);
+v1 = add(v1, 4096);
+v1 = osc_sine(3, v1, 42);
+
+$ virgill_snare_reverb, 8960, 4640, 4320, Y
+#
+v1 = clone(smp,2, 48);
+v1 = sv_flt_n(1, v1, 20, 127, 1);
+v1 = reverb(v1, 112, 19);
+
+$ virgill_pling1, 8192, 4370, 3822, Y
+#
+v3 = osc_sine(0, v3, 127);
+v2 = osc_pulse(1, 4095, 120, 39);
+v3 = add(v3, 3320);
+v3 = add(v3, v2);
+v1 = envd(4, 8, 0, 128);
+v1 = mul(v1, 64);
+v1 = sv_flt_n(6, v3, v1, 127, 0);
+v1 = onepole_flt(7, v1, 1, 1);
+v1 = reverb(v1, 106, 26);
+
+$ virgill_pling2, 8192, 4370, 3822, Y
+#
+v3 = osc_sine(0, v3, 128);
+v2 = osc_pulse(1, 4096, 120, 42);
+v3 = add(v3, 3320);
+v3 = add(v3, v2);
+v1 = envd(4, 8, 0, 128);
+v1 = mul(v1, 64);
+v1 = sv_flt_n(6, v3, v1, 127, 0);
+v1 = onepole_flt(7, v1, 1, 1);
+v1 = reverb(v1, 108, 26);
+
+$ virgill_lead, 24576, 12288, 12288, Y
+#
+v2 = osc_sine(0, 7, 128);
+v2 = mul(v2, 24);
+v2 = add(v2, 2048);
+v1 = osc_tri(3, v2, 69);
+v2 = osc_tri(4, 2047, 48);
+v1 = add(v1, v2);
+v2 = osc_tri(6, 4096, 26);
+v1 = add(v1, v2);
+
+$ virgill_chord1, 12288, 6144, 6144, Y
+#
+v1 = chordgen(0, 12, 5, 7, 12, 0);
+v2 = enva(1, 1, 0, 128);
+v1 = mul(v1, v2);
+
+$ virgill_chord2, 12288, 6144, 6144, Y
+#
+v1 = chordgen(0, 12, 3, 9, 12, 0);
+v2 = enva(1, 1, 0, 128);
+v1 = mul(v1, v2);
+
+$ virgill_chord3, 12288, 6144, 6144, Y
+#
+v1 = chordgen(0, 12, 7, 10, 12, 0);
+v2 = enva(1, 1, 0, 128);
+v1 = mul(v1, v2);
+
+$ virgill_chord4, 12288, 6144, 6144, Y
+#
+v1 = chordgen(0, 12, 2, 8, 12, 0);
+v2 = enva(1, 1, 0, 128);
+v1 = mul(v1, v2);
+
+$ virgill_chaosbass, 9984, 4992, 4992, Y
+#
+v1 = osc_saw(0, 512, 128);
+v1 = sh(1, v1, 21);
+v1 = sv_flt_n(2, v1, 13, 0, 0);
+v1 = cmb_flt_n(3, v1, 255, 127, 110);
+

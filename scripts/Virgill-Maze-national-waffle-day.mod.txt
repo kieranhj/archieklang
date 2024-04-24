@@ -1,0 +1,162 @@
+5632, 7680, 0, 0, 0, 0, 0, 0
+$ Virgill_sfx_air, 8192, 4096, 4096, Y
+#
+v3 = osc_noise(96);
+v3 = onepole_flt(1, v3, 82, 1);
+v2 = osc_sine(2, 12, 20);
+v2 = ctrl(v2);
+v1 = sv_flt_n(4, v3, v2, 16, 0);
+v1 = cmb_flt_n(5, v1, 256, 88, 128);
+
+$ Virgill_snare, 5632, 2816, 2816, N
+#
+v1 = imported_sample(smp,0);
+
+$ Virgill_dubbass+kick, 8192, 4096, 4096, Y
+#
+v1 = imported_sample(smp,1);
+
+$ Virgill_dubbass2+kick, 6144, 4094, 2050, N
+#
+v1 = clone(smp,2, 0);
+v1 = cmb_flt_n(1, v1, 256, 64, 128);
+
+$ Virgill_dubbass3, 6144, 4094, 2050, N
+#
+v1 = clone(smp,2, 934);
+v1 = sv_flt_n(1, v1, 17, 127, 1);
+v2 = osc_pulse(2, 256, 83, 53);
+v4 = osc_pulse(3, 250, 64, 53);
+v2 = add(v2, v4);
+v3 = envd(5, 15, 0, 128);
+v2 = mul(v2, v3);
+v1 = add(v1, v2);
+
+$ Virgill_dubbass4, 6144, 4094, 2050, N
+#
+v1 = clone(smp,2, 1098);
+v1 = sv_flt_n(1, v1, 17, 127, 1);
+v2 = osc_pulse(2, 256, 83, 31);
+v4 = osc_pulse(3, 250, 64, 75);
+v2 = add(v2, v4);
+v3 = envd(5, 15, 0, 128);
+v2 = mul(v2, v3);
+v1 = add(v1, v2);
+
+$ Virgill_dubbass+snare, 6144, 4094, 2050, N
+#
+v1 = clone(smp,2, 0);
+v1 = sv_flt_n(1, v1, 17, 127, 1);
+v2 = osc_pulse(2, 128, 83, 59);
+v3 = envd(3, 15, 0, 128);
+v2 = mul(v2, v3);
+v1 = add(v1, v2);
+v2 = clone(smp,1, 0);
+v1 = add(v1, v2);
+
+$ Virgill_dubbass+hat, 6144, 4094, 2050, N
+#
+v1 = clone(smp,2, 1044);
+v1 = sv_flt_n(1, v1, 17, 127, 1);
+v2 = osc_pulse(2, 256, 83, 18);
+v4 = osc_pulse(3, 250, 64, 88);
+v2 = add(v2, v4);
+v3 = envd(5, 15, 0, 128);
+v2 = mul(v2, v3);
+v1 = add(v1, v2);
+v2 = osc_noise(128);
+v2 = sv_flt_n(9, v2, 123, 4, 1);
+v3 = envd(10, 6, 0, 128);
+v2 = mul(v2, v3);
+v1 = add(v1, v2);
+
+$ Virgill_dubbass+zap, 6144, 4094, 2050, N
+#
+v1 = clone(smp,2, 0);
+v1 = sv_flt_n(1, v1, 17, 110, 1);
+v2 = osc_pulse(2, 256, 83, 9);
+v3 = envd(3, 15, 0, 128);
+v2 = mul(v2, v3);
+v1 = add(v1, v2);
+
+$ Virgill_lead_soft, 20480, 10240, 10240, Y
+#
+v1 = osc_saw(0, 1024, 126);
+v2 = osc_saw(1, 1032, 102);
+v1 = add(v1, v2);
+v2 = adsr(3, 8388352, 585, 0, 6141, 0, 8388352);
+v1 = mul(v1, v2);
+v2 = osc_saw(5, 2045, 128);
+v3 = osc_saw(6, 2057, 96);
+v2 = add(v2, v3);
+v3 = adsr(8, 691, 55080, 7022592, 10237, 7022592, 7077672);
+v2 = mul(v2, v3);
+v1 = add(v1, v2);
+v1 = sv_flt_n(11, v1, 72, 127, 0);
+v2 = osc_saw(12, 4090, 41);
+v1 = add(v1, v2);
+
+$ Virgill_lead_chip, 16384, 8192, 8192, Y
+#
+v2 = osc_pulse(0, 16, 86, 64);
+v2 = mul(v2, 512);
+v2 = add(v2, 1024);
+v3 = osc_tri(3, 2, 112);
+v3 = ctrl(v3);
+v1 = osc_pulse(5, v2, 128, v3);
+v1 = sv_flt_n(6, v1, 21, 70, 1);
+
+$ Virgill_chord_maj, 8192, 4736, 3456, N
+#
+v1 = chordgen(0, 10, 4, 7, 12, 0);
+v2 = envd(1, 17, 0, 128);
+v1 = mul(v1, v2);
+
+$ Virgill_chord_sus4, 8192, 4736, 3456, N
+#
+v1 = chordgen(0, 10, 2, 7, 12, 0);
+v2 = envd(1, 17, 0, 128);
+v1 = mul(v1, v2);
+
+$ Virgill_chord_sus, 8192, 4736, 3456, N
+#
+v1 = chordgen(0, 10, 2, 9, 12, 0);
+v2 = envd(1, 17, 0, 128);
+v1 = mul(v1, v2);
+
+$ Virgill_chord_aug, 8192, 4736, 3456, N
+#
+v1 = chordgen(0, 10, 5, 8, 11, 0);
+v2 = envd(1, 17, 0, 128);
+v1 = mul(v1, v2);
+
+$ Virgill_sfx_lofi, 8192, 4096, 4096, Y
+#
+v3 = osc_noise(48);
+v3 = sh(1, v3, 64);
+v1 = osc_sine(2, v3, 128);
+v2 = osc_saw(3, 4096, 128);
+v1 = mul(v1, v2);
+v2 = osc_saw(5, 4032, 128);
+v1 = mul(v1, v2);
+v1 = onepole_flt(7, v1, 20, 1);
+v1 = distortion(v1, 30);
+
+$ Virgill_sfx_ring, 8192, 4736, 3456, Y
+#
+v1 = osc_tri(0, v2, 128);
+v2 = osc_tri(1, 255, 128);
+v1 = mul(v1, v2);
+v2 = mul(v2, 6173);
+v3 = envd(4, 12, 32, 128);
+v1 = mul(v1, v3);
+
+$ Virgill_main_lead, 16384, 8192, 8192, Y
+#
+v2 = osc_tri(0, 4, 120);
+v2 = ctrl(v2);
+v1 = osc_pulse(2, 2048, 64, v2);
+v3 = osc_pulse(3, 2050, 64, v2);
+v1 = add(v1, v3);
+v1 = sv_flt_n(5, v1, 33, 127, 1);
+

@@ -1,0 +1,191 @@
+2992, 1264, 3420, 0, 0, 0, 0, 0
+$ snare, 2794, 2028, 766, Y
+#
+v3 = osc_pulse(0, 100, 127, 64);
+v3 = ctrl(v3);
+v2 = osc_noise(v3);
+v3 = add(v3, -127);
+v4 = envd(5, 14, 0, 127);
+v4 = mul(v4, 1280);
+v1 = osc_pulse(7, v4, v3, 63);
+v1 = add(v1, v2);
+v4 = envd(9, 14, 0, 127);
+v1 = mul(v1, v4);
+v1 = mul(v1, v4);
+v1 = sv_flt_n(12, v1, v3, 127, 1);
+v1 = mul(v1, v4);
+
+$ pling1, 2162, 2034, 128, Y
+#
+v1 = clone(smp,0, 0);
+v1 = cmb_flt_n(1, v1, 128, 107, 127);
+v1 = sv_flt_n(2, v1, 17, 40, 1);
+v4 = envd(3, 12, 0, 127);
+v1 = mul(v1, v4);
+v1 = mul(v1, v4);
+
+$ pling2, 2572, 2444, 128, Y
+#
+v1 = clone(smp,0, 0);
+v1 = cmb_flt_n(1, v1, 128, 107, 127);
+v1 = sv_flt_n(2, v1, 40, 40, 1);
+v4 = envd(3, 12, 0, 127);
+v1 = mul(v1, v4);
+v1 = mul(v1, v4);
+
+$ pling3, 2572, 2444, 128, Y
+#
+v1 = clone(smp,0, 0);
+v1 = cmb_flt_n(1, v1, 128, 107, 127);
+v1 = sv_flt_n(2, v1, 87, 40, 1);
+v4 = envd(3, 12, 0, 127);
+v1 = mul(v1, v4);
+v1 = mul(v1, v4);
+
+$ snare_hp, 3124, 2144, 980, Y
+#
+v1 = clone(smp,0, 0);
+v1 = sv_flt_n(1, v1, 25, 10, 1);
+
+$ squarebass1, 8316, 7802, 514, Y
+#
+v4 = envd(0, 6, 0, 2);
+v4 = add(v4, 256);
+v1 = osc_sine(2, 4, 37);
+v1 = ctrl(v1);
+v3 = osc_pulse(4, v4, 50, v1);
+v4 = add(v4, 252);
+v2 = osc_pulse(6, v4, 40, v1);
+v1 = add(v3, v2);
+
+$ chaosbass, 7566, 7052, 514, Y
+#
+v4 = envd(0, 5, 0, 6);
+v4 = add(v4, 256);
+v1 = osc_sine(2, 260, 112);
+v1 = ctrl(v1);
+v3 = osc_pulse(4, v4, 50, v1);
+v4 = add(v4, 252);
+v2 = osc_pulse(6, v4, 40, v1);
+v1 = add(v3, v2);
+
+$ kick, 2992, 1518, 1474, N
+#
+v1 = imported_sample(smp,0);
+
+$ kick_bass1, 1862, 1602, 260, Y
+#
+v1 = clone(smp,7, 0);
+v1 = cmb_flt_n(1, v1, 256, 88, 127);
+
+$ hat, 1264, 632, 632, N
+#
+v1 = imported_sample(smp,1);
+v1 = sv_flt_n(1, v1, 53, 127, 1);
+
+$ hat_open, 3838, 1918, 1920, Y
+#
+v1 = clone(smp,9, 0);
+v1 = reverb(v1, 121, 13);
+
+$ kick_bass2, 1852, 1336, 516, Y
+#
+v1 = clone(smp,7, 0);
+v1 = cmb_flt_n(1, v1, 256, 98, 127);
+v1 = sv_flt_n(2, v1, 26, 127, 0);
+v2 = clone(smp,9, 0);
+v2 = vol(v2, 67);
+v1 = add(v1, v2);
+
+$ kick_bass3, 1850, 1334, 516, Y
+#
+v1 = clone(smp,7, 0);
+v1 = cmb_flt_n(1, v1, 256, 98, 127);
+v1 = sv_flt_n(2, v1, 42, 127, 0);
+
+$ lead_low, 28672, 14336, 14336, Y
+#
+v2 = osc_sine(0, 3, 121);
+v2 = ctrl(v2);
+v1 = osc_pulse(2, 1024, 63, v2);
+v2 = osc_pulse(3, 1029, 52, v2);
+v1 = add(v1, v2);
+v1 = sv_flt_n(5, v1, 10, 127, 1);
+
+$ lead_high, 24576, 12288, 12288, Y
+#
+v2 = osc_sine(0, 2, 116);
+v2 = ctrl(v2);
+v1 = osc_pulse(2, 2048, 63, v2);
+v2 = osc_pulse(3, 2052, 52, v2);
+v1 = add(v1, v2);
+
+$ chord1, 14336, 7168, 7168, Y
+#
+v1 = chordgen(0, 13, 2, 7, 12, 0);
+v1 = sv_flt_n(1, v1, 70, 127, 0);
+
+$ chord2, 14336, 7168, 7168, Y
+#
+v1 = chordgen(0, 13, 2, 5, 12, 0);
+v1 = sv_flt_n(1, v1, 70, 127, 0);
+
+$ chord3, 14336, 7168, 7168, Y
+#
+v1 = chordgen(0, 13, 3, 8, 12, 0);
+v1 = sv_flt_n(1, v1, 70, 127, 0);
+
+$ chord4, 14336, 7168, 7168, Y
+#
+v1 = chordgen(0, 13, 5, 8, 12, 0);
+v1 = sv_flt_n(1, v1, 70, 127, 0);
+
+$ chord5, 14336, 7168, 7168, Y
+#
+v1 = chordgen(0, 13, 6, 9, 12, 0);
+v1 = sv_flt_n(1, v1, 70, 127, 0);
+
+$ pluck_reverb, 3322, 3128, 194, Y
+#
+v1 = osc_saw(0, 2048, 127);
+v2 = osc_saw(1, 685, 127);
+v1 = mul(v1, v2);
+v2 = envd(3, 8, 0, 127);
+v1 = mul(v1, v2);
+v1 = reverb(v1, 102, 25);
+
+$ pluck_reverb2, 3356, 3162, 194, Y
+#
+v1 = osc_saw(0, 4096, 127);
+v2 = osc_saw(1, 685, 127);
+v1 = mul(v1, v2);
+v2 = envd(3, 8, 0, 127);
+v1 = mul(v1, v2);
+v1 = reverb(v1, 102, 25);
+
+$ kick_bass4, 2052, 1026, 1026, Y
+#
+v1 = clone(smp,8, 0);
+v2 = imported_sample(smp,2);
+v1 = add(v1, v2);
+
+$ chord6, 14336, 7168, 7168, Y
+#
+v1 = chordgen(0, 13, 4, 7, 12, 0);
+v1 = sv_flt_n(1, v1, 70, 127, 0);
+
+$ chord7, 14336, 7168, 7168, Y
+#
+v1 = chordgen(0, 13, 1, 5, 12, 0);
+v1 = sv_flt_n(1, v1, 70, 127, 0);
+
+$ Instrument_26, 2766, 2638, 128, Y
+#
+v1 = osc_saw(0, 2048, 127);
+v2 = osc_tri(1, 2031, 127);
+v1 = mul(v1, v2);
+v2 = envd(5, 10, 0, 127);
+v1 = mul(v1, v2);
+v1 = sv_flt_n(7, v1, 42, 11, 2);
+v1 = reverb(v1, 101, 20);
+

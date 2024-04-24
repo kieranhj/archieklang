@@ -2,11 +2,11 @@
 ; ArchieKlang test harness.
 ; ============================================================================
 
-.equ _VERIFY_SAMPLES,           0
+.equ _VERIFY_SAMPLES,           1
 .equ _PLAY_SONG,                1
 .equ _SAVE_GEN_SAMPLES,         0
 .equ _EMBED_QTM,                (_PLAY_SONG && 1)
-.equ _LOG_SAMPLES,              1
+.equ _LOG_SAMPLES,              0
 ;.equ _EXTERNAL_SAMPLES,         1  ; Now provided by make.bat
 
 .equ AK_CLEAR_FIRST_2_BYTES,    1
@@ -216,6 +216,11 @@ main:
     rsbmi r1, r1, #0        ; abs(abs(r3)-abs(r4))
     cmp r1, r12
     movgt r12, r1
+
+    cmp r1, #1
+    ble .42
+    mov r1, r1
+
     b .42
 
 .41:
@@ -227,6 +232,10 @@ main:
     add r1, r3, r4          ; abs(r3)+abs(r4)
     cmp r1, r12
     movgt r12, r1
+
+    cmp r1, #1
+    ble .42
+    mov r1, r1
 
 .42:
     add r6, r6, #1

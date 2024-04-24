@@ -1,0 +1,265 @@
+0, 0, 0, 0, 0, 0, 0, 0
+$ teo_kick, 2304, 1151, 1153, N
+#
+v2 = envd(0, 8, 0, 127);
+v4 = mul(v2, 1152);
+v4 = add(v4, -300);
+v3 = mul(v2, 128);
+v1 = osc_sine(4, v4, v3);
+v3 = sv_flt_n(5, v1, 2, 2, 1);
+v1 = add(v3, v1);
+v1 = add(v1, v1);
+v1 = mul(v1, v2);
+
+$ teo_snare, 8192, 5084, 3108, Y
+#
+v1 = osc_noise(127);
+v2 = envd(1, 6, 0, 127);
+v3 = sv_flt_n(2, v1, 12, 8, 1);
+v3 = add(v3, v3);
+v3 = add(v3, v3);
+v1 = sv_flt_n(5, v1, 127, 32, 1);
+v1 = add(v3, v1);
+v1 = mul(v1, v2);
+v2 = reverb(v1, 74, 28);
+v1 = add(v1, v2);
+
+$ teo_kick+snare, 2304, 1151, 1153, N
+#
+v2 = clone(smp,1, 0);
+v3 = envd(1, 9, 0, 127);
+v2 = mul(v2, v3);
+v3 = clone(smp,0, 0);
+v1 = add(v3, v2);
+
+$ teo_open_hat, 4096, 2047, 2049, N
+#
+v1 = osc_noise(18);
+v1 = sv_flt_n(1, v1, 120, 127, 1);
+v2 = envd(2, 11, 0, 127);
+v1 = mul(v1, v2);
+
+$ teo_closed_hat, 2304, 1151, 1153, N
+#
+v2 = envd(0, 4, 16, 127);
+v1 = clone(smp,3, 0);
+v1 = mul(v1, v2);
+
+$ teo_kick+hat, 2304, 1151, 1153, N
+#
+v1 = clone(smp,0, 0);
+v2 = clone(smp,4, 0);
+v1 = add(v1, v2);
+
+$ teo_ghostsnare, 2816, 1407, 1409, N
+#
+v2 = envd(0, 4, 24, 100);
+v1 = clone(smp,1, 0);
+v1 = mul(v1, v2);
+
+$ teo_reverse_kick, 2304, 1151, 1153, N
+#
+v1 = clone_reverse(smp,0, 0);
+
+$ teo_reverse_snare, 2304, 1151, 1153, N
+#
+v1 = clone_reverse(smp,6, 0);
+
+$ teo_bass1, 4096, 2047, 2049, N
+#
+v2 = envd(0, 11, 0, 127);
+v4 = mul(v2, 128);
+v3 = osc_saw(2, 200, 127);
+v1 = osc_saw(3, 403, 127);
+v1 = add(v3, v1);
+v3 = osc_saw(5, 397, 127);
+v1 = add(v1, v3);
+v1 = sv_flt_n(7, v1, v4, 16, 0);
+v3 = osc_tri(8, 200, 127);
+v1 = add(v1, v3);
+v1 = mul(v1, v2);
+
+$ teo_bass2, 4096, 2047, 2049, N
+#
+v2 = envd(0, 11, 0, 127);
+v4 = mul(v2, 64);
+v3 = osc_saw(2, 200, 127);
+v1 = osc_saw(3, 403, 127);
+v1 = add(v3, v1);
+v3 = osc_saw(5, 397, 127);
+v1 = add(v1, v3);
+v1 = sv_flt_n(7, v1, v4, 16, 0);
+v3 = osc_tri(8, 200, 127);
+v1 = add(v1, v3);
+v1 = mul(v1, v2);
+
+$ teo_bass3, 4096, 2047, 2049, N
+#
+v2 = envd(0, 11, 0, 127);
+v4 = mul(v2, 32);
+v3 = osc_saw(2, 200, 127);
+v1 = osc_saw(3, 403, 127);
+v1 = add(v3, v1);
+v3 = osc_saw(5, 397, 127);
+v1 = add(v1, v3);
+v1 = sv_flt_n(7, v1, v4, 16, 0);
+v3 = osc_tri(8, 200, 127);
+v1 = add(v1, v3);
+v1 = mul(v1, v2);
+
+$ teo_bass_hpf, 4096, 2047, 2049, N
+#
+v1 = clone(smp,9, 0);
+v1 = sv_flt_n(1, v1, 60, 32, 1);
+
+$ teo_leadsynth1, 8192, 4096, 4096, Y
+#
+v3 = osc_tri(0, 800, 90);
+v1 = osc_saw(1, 1607, 60);
+v1 = add(v1, v3);
+v3 = osc_saw(3, 1593, 60);
+v1 = add(v1, v3);
+v3 = osc_saw(5, 1600, 60);
+v1 = add(v1, v3);
+v1 = sv_flt_n(7, v1, 20, 32, 1);
+
+$ teo_leadsynth2, 8192, 4096, 4096, Y
+#
+v3 = osc_tri(0, 800, 90);
+v1 = osc_saw(1, 1607, 60);
+v1 = add(v1, v3);
+v3 = osc_saw(3, 1593, 60);
+v1 = add(v1, v3);
+v3 = osc_saw(5, 1600, 60);
+v1 = add(v1, v3);
+v1 = sv_flt_n(7, v1, 50, 32, 1);
+
+$ teo_leadsynth3, 8192, 4096, 4096, Y
+#
+v3 = osc_tri(0, 800, 90);
+v1 = osc_saw(1, 1607, 60);
+v1 = add(v1, v3);
+v3 = osc_saw(3, 1593, 60);
+v1 = add(v1, v3);
+v3 = osc_saw(5, 1600, 60);
+v1 = add(v1, v3);
+v1 = sv_flt_n(7, v1, 80, 32, 1);
+
+$ teo_chord1, 8192, 4992, 3200, Y
+#
+v2 = envd(0, 9, 0, 127);
+v1 = chordgen(1, 13, 12, 3, 7, 10);
+v2 = mul(v2, 128);
+v2 = add(v2, 10);
+v1 = sv_flt_n(4, v1, v2, 127, 2);
+
+$ teo_chord2, 8192, 4992, 3200, Y
+#
+v2 = envd(0, 9, 0, 127);
+v1 = chordgen(1, 13, 12, 2, 7, 10);
+v2 = mul(v2, 128);
+v2 = add(v2, 10);
+v1 = sv_flt_n(4, v1, v2, 127, 2);
+
+$ teo_chord3, 8192, 4992, 3200, Y
+#
+v2 = envd(0, 9, 0, 127);
+v1 = chordgen(1, 13, 12, 5, 7, 10);
+v2 = mul(v2, 128);
+v2 = add(v2, 10);
+v1 = sv_flt_n(4, v1, v2, 127, 2);
+
+$ teo_sfx1, 16384, 8192, 8192, Y
+#
+v1 = clone(smp,12, 0);
+v2 = clone(smp,0, 0);
+v1 = add(v1, v2);
+v2 = osc_noise(50);
+v1 = add(v1, v2);
+v2 = envd(5, 7, 0, 127);
+v1 = mul(v1, v2);
+v2 = reverb(v1, 120, 16);
+v1 = add(v1, v2);
+
+$ teo_sfx2, 16384, 8192, 8192, Y
+#
+v2 = osc_sine(0, 8, 64);
+v2 = mul(v2, 128);
+v2 = add(v2, 10);
+v1 = clone(smp,1, 0);
+v4 = envd(4, 8, 0, 127);
+v1 = mul(v1, v4);
+v4 = reverb(v1, 120, 16);
+v1 = add(v1, v4);
+v3 = mul(v1, 16384);
+v1 = add(v1, v3);
+v1 = sv_flt_n(10, v1, v2, 127, 2);
+
+$ teo_bpluck1, 8192, 4096, 4096, Y
+#
+v1 = clone(smp,13, 0);
+v2 = osc_saw(1, 3202, 127);
+v1 = add(v1, v2);
+v2 = envd(3, 6, 12, 127);
+v3 = mul(v2, 128);
+v3 = add(v3, 20);
+v1 = sv_flt_n(6, v1, v3, 32, 2);
+v1 = mul(v1, v2);
+
+$ teo_bpluck2, 8192, 4096, 4096, Y
+#
+v1 = clone(smp,13, 0);
+v2 = osc_saw(1, 3202, 127);
+v1 = add(v1, v2);
+v2 = envd(3, 6, 12, 127);
+v3 = mul(v2, 128);
+v3 = add(v3, 20);
+v1 = sv_flt_n(6, v1, v3, 64, 1);
+v1 = mul(v1, v2);
+
+$ teo_bpluck3, 8192, 4096, 4096, Y
+#
+v1 = clone(smp,13, 0);
+v2 = osc_saw(1, 3202, 127);
+v1 = add(v1, v2);
+v2 = envd(3, 6, 12, 127);
+v3 = mul(v2, 128);
+v3 = add(v3, 20);
+v1 = sv_flt_n(6, v1, v3, 32, 0);
+v1 = mul(v1, v2);
+
+$ teo_3031, 4096, 2047, 2049, N
+#
+v2 = envd(0, 13, 0, 127);
+v1 = osc_pulse(1, 400, 100, 64);
+v3 = mul(v2, 32);
+v1 = sv_flt_n(3, v1, v3, 0, 2);
+v1 = mul(v2, v1);
+
+$ teo_3032, 4096, 2047, 2049, N
+#
+v2 = envd(0, 13, 0, 127);
+v1 = osc_pulse(1, 400, 100, 64);
+v3 = mul(v2, 32);
+v3 = add(v3, 15);
+v1 = sv_flt_n(4, v1, v3, 0, 2);
+v1 = mul(v2, v1);
+
+$ teo_3033, 4096, 2047, 2049, N
+#
+v2 = envd(0, 13, 0, 127);
+v1 = osc_pulse(1, 400, 100, 64);
+v3 = mul(v2, 32);
+v3 = add(v3, 30);
+v1 = sv_flt_n(4, v1, v3, 0, 2);
+v1 = mul(v2, v1);
+
+$ teo_3034, 4096, 2047, 2049, N
+#
+v2 = envd(0, 13, 0, 127);
+v1 = osc_pulse(1, 400, 100, 64);
+v3 = mul(v2, 32);
+v3 = add(v3, 45);
+v1 = sv_flt_n(4, v1, v3, 1, 2);
+v1 = mul(v2, v1);
+
