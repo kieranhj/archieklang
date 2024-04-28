@@ -23,7 +23,7 @@ TODO:
     - nah-kolor 'on fire'.mod -                 BUILT: 5/28 errors (max 109)
     - optimal workflow.mod -                    BUILT: 3/28 errors (max 128)
     - tecon-disco transmission.mod -            BUILT: 3/31 errors (max 159)
-    - Virgill&Maze-national waffle day.mod -    BUILT: 1/18 errors (max 255)
+    - Virgill&Maze-national waffle day.mod -    BUILT: PASSED!
     - Virgill-80s architecture.mod -            BUILT: 4/27 errors (max 173)
     - Virgill-amigahub.mod -                    BUILT: 1/25 errors (max 192)
     - Virgill-atariklang.mod -                  BUILT: 2/21 errors (max 239)

@@ -7,8 +7,8 @@ import os
 import struct
 from parse import *
 
-DEBUG_INSTRUMENT=21
-DEBUG_SAMPLE=64
+DEBUG_INSTRUMENT=0
+DEBUG_SAMPLE=0
 
 DECAY_TABLE = [32767, 32767, 32767, 16384, 10922, 8192, 6553, 4681, 3640, 2978, 2520, 2048, 1724, 1489, 1310, 1129, 992, 885, 799, 712, 642, 585, 537, 489, 448, 414, 385, 356, 330, 309, 289, 270, 254, 239, 225, 212, 201, 190, 181, 171, 163, 155, 148, 141, 134, 129, 123, 118, 113, 108, 104, 100, 96, 93, 89, 86, 83, 80, 77, 75, 72, 70, 68, 65, 63, 61, 60, 58, 56, 54, 53, 51, 50, 49, 47, 46, 45, 44, 43, 41, 40, 39, 38, 38, 37, 36, 35, 34, 33, 33, 32, 31, 30, 30, 29, 29, 28, 27, 27, 26, 26, 25, 25, 24, 24, 23, 23, 22, 22, 22, 21, 21, 20, 20, 20, 19, 19, 19, 18, 18, 18, 17, 17, 17, 17, 16, 16, 16]
 
@@ -114,6 +114,7 @@ class AkpParser:
                 asm_file.write(f'\tmul r{var-1}, r{params_V[0]-1}, r{params_V[1]-1}\n')
 
             asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #15\n')
+            self.sign_extend(asm_file, var-1)
         else:
             shift_val=params_C[1]
             shift_bit=shift_val & (shift_val-1)
@@ -141,6 +142,7 @@ class AkpParser:
 
                 asm_file.write(f'\tmul r{var-1}, r14, r{params_C[0]-1}\n')
                 asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #15\n')
+                self.sign_extend(asm_file, var-1)
 
     def func_osc_saw(self, asm_file, var, param_string):
         param_strings=parse("{:d}, {}, {}", param_string)
@@ -690,6 +692,7 @@ class AkpParser:
             asm_file.write(f'\tmov r{var-1}, r4\n')
         elif mode==1:
             asm_file.write(f'\tsub r{var-1}, r{val_V[0]-1}, r4\n')
+            self.sign_extend(asm_file, var-1)
         else:
             asm_file.write(f'\tmov r{var-1}, #0\n')
 
@@ -958,6 +961,14 @@ class AkpParser:
                 asm_file.write(f'\tmov r14, #0\t; rampup\n')
                 asm_file.write(f'\tmov r12, r11, lsl #8\t; rampdown\n')
                 asm_file.write(f"LoopGen_{self._inst_nr}:\n")
+
+                if DEBUG_INSTRUMENT==self._inst_nr:
+                    asm_file.write(f"\tmov r2, #{inst_def['rep_len'] - (DEBUG_SAMPLE-inst_def['rep_off']-2)}\n")
+                    asm_file.write(f'\tcmp r7, r2\n')
+                    asm_file.write(f'\tbne .1\n')
+                    asm_file.write(f'\tmov r7, r7\t; BREAK HERE!\n')
+                    asm_file.write(f'\t.1:\n')
+
                 asm_file.write(f'\tmov r3, r14, lsr #8\n')
                 asm_file.write(f'\tmov r2, r12, lsr #8\n')
 
