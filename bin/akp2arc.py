@@ -7,8 +7,8 @@ import os
 import struct
 from parse import *
 
-DEBUG_INSTRUMENT=0
-DEBUG_SAMPLE=0
+DEBUG_INSTRUMENT=21
+DEBUG_SAMPLE=64
 
 DECAY_TABLE = [32767, 32767, 32767, 16384, 10922, 8192, 6553, 4681, 3640, 2978, 2520, 2048, 1724, 1489, 1310, 1129, 992, 885, 799, 712, 642, 585, 537, 489, 448, 414, 385, 356, 330, 309, 289, 270, 254, 239, 225, 212, 201, 190, 181, 171, 163, 155, 148, 141, 134, 129, 123, 118, 113, 108, 104, 100, 96, 93, 89, 86, 83, 80, 77, 75, 72, 70, 68, 65, 63, 61, 60, 58, 56, 54, 53, 51, 50, 49, 47, 46, 45, 44, 43, 41, 40, 39, 38, 38, 37, 36, 35, 34, 33, 33, 32, 31, 30, 30, 29, 29, 28, 27, 27, 26, 26, 25, 25, 24, 24, 23, 23, 22, 22, 22, 21, 21, 20, 20, 20, 19, 19, 19, 18, 18, 18, 17, 17, 17, 17, 16, 16, 16]
 
@@ -933,15 +933,8 @@ class AkpParser:
             if self._buffers > 0:
                 asm_file.write(f'\tsub r9, r9, #2048*4*{self._buffers}\n')
 
-            #asm_file.write(f'\t.if _LOG_SAMPLES\n')
-            #asm_file.write(f'\tmov r0, r0, asr #8\n')
-            #asm_file.write(f'\tmov r0, r0, asl #24\n')
-            #asm_file.write(f'\tswi Sound_SoundLog\n')
-            #asm_file.write(f'\tstrb r0, [r8], #1\n')
-            #asm_file.write(f'\t.else\n')
             asm_file.write(f'\tmov r4, r0, asr #8\n')
             asm_file.write(f'\tstrb r4, [r8], #1\n')
-            #asm_file.write(f'\t.endif\n')
             asm_file.write(f'\t\nAK_FINE_PROGRESS\n\n')
             asm_file.write(f'\tadd r7, r7, #1\n')
             asm_file.write(f'\tldr r4, [r10, #AK_SMPLEN+4*{self._inst_nr-1}]\n')
@@ -956,6 +949,7 @@ class AkpParser:
                 asm_file.write(f"\tmov r7, #{inst_def['rep_len']}\n")
                 asm_file.write(f'\tldr r6, [r10, #AK_SMPADDR+4*{self._inst_nr-1}]\n')
                 asm_file.write(f"\tadd r6, r6, #{inst_def['rep_off']}\t; src1\n")
+                asm_file.write(f"\tadd r6, r6, #2\t; additional +2 offset in AmigaKlangGUI\n")
                 asm_file.write(f'\tsub r4, r6, r7\t; src2\n')
                 asm_file.write(f'\tmov r0, r11, lsl #8\t; 32767<<8\n')
                 asm_file.write(f'\tmov r1, r7\n')
@@ -975,22 +969,28 @@ class AkpParser:
                 asm_file.write(f'\tmov r0, r0, asl #24\n')
                 asm_file.write(f'\tmov r0, r0, asr #24\n')
 
+                # Actual loopgen code in synthnodes.c:
+                # asm_file.write(f'\tmul r0, r3, r0\n')
+                # asm_file.write(f'\tmla r0, r1, r2, r0\n')
+                # asm_file.write(f'\tmov r0, r0, lsr #15\n')
+                # TODO: Make this a conversion option?
+
+                # Actual loopgen code in AmigaKlangGUI:
                 asm_file.write(f'\tmul r0, r3, r0\n')
-                asm_file.write(f'\tmla r0, r1, r2, r0\n')
-                asm_file.write(f'\tmov r0, r0, lsr #15\n')
-                #asm_file.write(f'\t.if _LOG_SAMPLES\n')
-                #asm_file.write(f'\tmov r0, r0, asl #24\n')
-                #asm_file.write(f'\tswi Sound_SoundLog\n')
-                #asm_file.write(f'\tstrb r0, [r6], #1\n')
-                #asm_file.write(f'\t.else\n')
+                asm_file.write(f'\tmov r0, r0, asr #7\n')
+                asm_file.write(f'\tmul r1, r2, r1\n')
+                asm_file.write(f'\tadd r0, r0, r1, asr #7\n')
+                asm_file.write(f'\tmov r0, r0, asr #8\n')
+
                 asm_file.write(f'\tstrb r0, [r6], #1\n')
-                #asm_file.write(f'\t.endif\n')
+
                 asm_file.write(f'\tadd r14, r14, r5\n')
                 asm_file.write(f'\tsub r12, r12, r5\n')
                 asm_file.write(f'\t; TODO: Fine progress.\n')
                 asm_file.write(f'\tsubs r7, r7, #1\n')
                 asm_file.write(f"\tbne LoopGen_{self._inst_nr}\n\n")
 
+            # asm_file.write(f'\tsub r8, r8, #1\n')
 
         print(f'{self._inst_nr} total instruments.')
         assert(self._inst_nr==self._num_instruments)
@@ -1053,7 +1053,7 @@ class AkpParser:
             asm_file.write(f'\t.long 0x{inst[0]:08x}\t; Instrument {i} Length\n')
             i+=1
 
-        for i in range(len(self._instruments),32):
+        for i in range(len(self._instruments)+1,32):
             asm_file.write(f'\t.long 0x00000000\t; Instrument {i} Length\n')
 
         asm_file.write('AK_ExtSmpLen:\n')
@@ -1073,10 +1073,11 @@ class AkpParser:
         asm_file.write(f'\t.skip {self._max_instances}*4\n')
 
         asm_file.write('AK_EnvDValue:\n\t; NB. Must follow AK_OpInstance!\n')
-        asm_file.write(f'\t.skip {self._max_dvalues}*4\n')
+        if self._max_dvalues > 0:
+            asm_file.write(f'\t.skip {self._max_dvalues}*4\n')
 
+        asm_file.write('AK_ADSRValues:\n')
         if len(self._adsr_values) > 0:
-            asm_file.write('AK_ADSRValues:\n')
             for params in self._adsr_values:
                 attackAmount=params[1]
                 decayAmount=params[2]

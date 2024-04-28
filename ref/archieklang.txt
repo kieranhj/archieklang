@@ -16,21 +16,21 @@ TODO:
     - ADSR envelope
 - Implement external samples - DONE
 - Test all example MODs - IN PROGRESS
-    - calcpreculation.mod -                     BUILT: 3/26 errors > 1
-    - JosSs-Cream.mod -                         BUILT: 0/21 errors > 1
-    - JosSs-DualPanoply.mod -                   BUILT: 6/28 errors > 1
-    - juice-tremors.mod -                       BUILT: 4/17 errors > 1
-    - nah-kolor 'on fire'.mod -                 BUILT: 1/28 errors > 1
-    - optimal workflow.mod -                    BUILT: 3/28 errors > 1
-    - tecon-disco transmission.mod -            BUILT: 6/31 errors > 1
-    - Virgill&Maze-national waffle day.mod -    BUILT: 7/18 errors > 1
-    - Virgill-80s architecture.mod -            BUILT: 7/27 errors > 1
-    - Virgill-amigahub.mod -                    BUILT: 1/25 errors > 1
-    - Virgill-atariklang.mod -                  BUILT: 4/21 errors > 1
-    - Virgill-colombia.mod -                    BUILT: 3/25 errors > 1
-    - Virgill-mothership.mod -                  BUILT: 4/20 errors > 1
+    - calcpreculation.mod -                     BUILT: 2/26 errors (max 10)
+    - JosSs-Cream.mod -                         BUILT: 2/21 errors (max 1)
+    - JosSs-DualPanoply.mod -                   BUILT: 6/28 errors (max 233)
+    - juice-tremors.mod -                       BUILT: 4/17 errors (max 127)
+    - nah-kolor 'on fire'.mod -                 BUILT: 5/28 errors (max 109)
+    - optimal workflow.mod -                    BUILT: 3/28 errors (max 128)
+    - tecon-disco transmission.mod -            BUILT: 3/31 errors (max 159)
+    - Virgill&Maze-national waffle day.mod -    BUILT: 1/18 errors (max 255)
+    - Virgill-80s architecture.mod -            BUILT: 4/27 errors (max 173)
+    - Virgill-amigahub.mod -                    BUILT: 1/25 errors (max 192)
+    - Virgill-atariklang.mod -                  BUILT: 2/21 errors (max 239)
+    - Virgill-colombia.mod -                    BUILT: 2/25 errors (max 10)
+    - Virgill-mothership.mod -                  BUILT: PASSED!
     - Virgill-nihil admirari.mod -              BUILT: PASSED!
-    - Virgill-redrum redrum.mod -               BUILT: 4/27 errors > 1
+    - Virgill-redrum redrum.mod -               BUILT: 4/27 errors (max 102)
 - Implement 16-bit linear to 8-bit log conversion.
 - Smaller code implementation w/ parameterised fn calls rather than inline.
 - Tidy up documentation

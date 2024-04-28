@@ -166,6 +166,8 @@ main:
     mov r6, #2
     add r8, r8, #2
     add r9, r9, #2
+    cmp r6, r7
+    bge .5
     .else
     mov r6, #0          ; sample idx
     .endif
