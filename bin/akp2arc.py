@@ -387,18 +387,21 @@ class AkpParser:
             print('WARNING: Expected "smp"?')
 
         if params[2] !=0 :
-            asm_file.write(f'\tadd r{var-1}, r7, #{params[2]}\n')
+            asm_file.write(f'\tadds r{var-1}, r7, #{params[2]}\n')
         else:
-            asm_file.write(f'\tmov r{var-1}, r7\n')
-            
-        asm_file.write(f'\tldr r6, [r10, #AK_SMPADDR+4*({params[1]}+1)]\n')
-        # asm_file.write(f'\tsub r6, r6, #1\n') # ARGH! CAN'T GET REVERSE RIGHT!!
+            asm_file.write(f'\tmovs r{var-1}, r7\n')
+
+        # TODO: Make bodge sample code a script option.
+        asm_file.write(f'\tldreqb r{var-1}, [r10, #AK_BODGESAMPLES+{params[1]+1}]\n')
+        asm_file.write(f'\tbeq CloneReverse_Bodge_{self._inst_nr}\n')
+
+        asm_file.write(f'\tldr r6, [r10, #AK_SMPADDR+4*{params[1]}]\n')
         asm_file.write(f'\tldr r4, [r10, #AK_SMPLEN+4*{params[1]}]\n')
         asm_file.write(f'\tcmp r{var-1}, r4\n')
         asm_file.write(f'\tmovge r{var-1}, #0\n')
-        # asm_file.write(f'\tmvnlt r{var-1}, r{var-1}\n')
-        asm_file.write(f'\trsblt r{var-1}, r{var-1}, #0\n')
+        asm_file.write(f'\tsublt r{var-1}, r4, r{var-1}\n')
         asm_file.write(f'\tldrltb r{var-1}, [r6, r{var-1}]\n')
+        asm_file.write(f'CloneReverse_Bodge_{self._inst_nr}:\n')
         asm_file.write(f'\tmov r{var-1}, r{var-1}, asl #24\n')
         asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #16\n')
 
@@ -850,6 +853,8 @@ class AkpParser:
             asm_file.write(f'\t; TODO: Delay buffer flag {self._buffers}.\n')
             asm_file.write(f'\tbl AK_ResetVars\n')
             asm_file.write(f'\tmov r7, #0\t; Sample byte count\n')
+            asm_file.write(f'\tldrb r4, [r8]\n')
+            asm_file.write(f'\tstrb r4, [r10, #AK_BODGESAMPLES+{self._inst_nr-1}]\t; store overflow byte.\n')
             asm_file.write(f'\tAK_PROGRESS\n\n')
             asm_file.write(f'Inst{self._inst_nr}Loop:\n')
 
@@ -984,7 +989,7 @@ class AkpParser:
                 # asm_file.write(f'\tmul r0, r3, r0\n')
                 # asm_file.write(f'\tmla r0, r1, r2, r0\n')
                 # asm_file.write(f'\tmov r0, r0, lsr #15\n')
-                # TODO: Make this a conversion option?
+                # TODO: Make this a script option?
 
                 # Actual loopgen code in AmigaKlangGUI:
                 asm_file.write(f'\tmul r0, r3, r0\n')
@@ -1000,8 +1005,6 @@ class AkpParser:
                 asm_file.write(f'\t; TODO: Fine progress.\n')
                 asm_file.write(f'\tsubs r7, r7, #1\n')
                 asm_file.write(f"\tbne LoopGen_{self._inst_nr}\n\n")
-
-            # asm_file.write(f'\tsub r8, r8, #1\n')
 
         print(f'{self._inst_nr} total instruments.')
         assert(self._inst_nr==self._num_instruments)
@@ -1103,6 +1106,10 @@ class AkpParser:
                 asm_file.write(f'\t.long {releaseAmount}\t; releaseAmount\n')
                 asm_file.write(f'\t.long {peak}\t; peak\n')
 
+        asm_file.write('AK_BodgeSamples:\n')
+        asm_file.write('\t.skip AK_MaxInstruments\n')
+        asm_file.write('\t.p2align 2\n')
+
         asm_file.write('\n; ============================================================================\n')
 
 
@@ -1137,6 +1144,7 @@ class AkpParser:
         asm_file.write('.equ AK_OPINSTANCE,\t\t(AK_OpInstance-AK_Vars)\n')
         asm_file.write('.equ AK_ENVDVALUE,\t\t(AK_EnvDValue-AK_Vars)\n')
         asm_file.write('.equ AK_ADSRVALUES,\t\t(AK_ADSRValues-AK_Vars)\n\n')
+        asm_file.write('.equ AK_BODGESAMPLES,\t\t(AK_BodgeSamples-AK_Vars)\n\n')
 
         asm_file.write(f'.equ AK_SMP_LEN,\t\t{self._total_smp_len}\n')
         asm_file.write(f'.equ AK_EXT_SMP_LEN,\t{self._total_ext_smp_len}\n\n')

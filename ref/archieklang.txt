@@ -20,12 +20,12 @@ TODO:
     - JosSs-Cream.mod -                         BUILT: 2/21 errors (max 1)
     - JosSs-DualPanoply.mod -                   BUILT: 6/28 errors (max 233)
     - juice-tremors.mod -                       BUILT: 4/17 errors (max 127)
-    - nah-kolor 'on fire'.mod -                 BUILT: 5/28 errors (max 109)
+    - nah-kolor 'on fire'.mod -                 BUILT: 5/28 errors (max 125)
     - optimal workflow.mod -                    BUILT: 3/28 errors (max 128)
     - tecon-disco transmission.mod -            BUILT: 3/31 errors (max 159)
     - Virgill&Maze-national waffle day.mod -    BUILT: PASSED!
     - Virgill-80s architecture.mod -            BUILT: 4/27 errors (max 173)
-    - Virgill-amigahub.mod -                    BUILT: 1/25 errors (max 192)
+    - Virgill-amigahub.mod -                    BUILT: PASSED! (w/ REVERSE SAMPLE BODGE)
     - Virgill-atariklang.mod -                  BUILT: 2/21 errors (max 239)
     - Virgill-colombia.mod -                    BUILT: 2/25 errors (max 10)
     - Virgill-mothership.mod -                  BUILT: PASSED!
@@ -37,4 +37,18 @@ TODO:
 - Replacement aklang2asm.bat for Archie - IN PROGRESS
 - Contact Virgill - IN PROGRESS
 
-DEBUG DISTORTION!
+CloneReverse is bugged:
+In AmigaKlangGUI the sample data is held in separate arrays.
+In AmigaKlangGUI the loopgen code writes beyond the length of the sample by +2.
+Clone Reverse reads one byte beyond the end of the cloned sample.
+In AmigaKlangGUI this is fine as it contains the overrun sample data.
+In runtime implementations this reads the first byte of the next sample.
+Only solution for this would be to store the extra byte somewhere after doing loopgen.
+Then special case reading this byte...
+Or just ask Virgill why the AmigaKlangGUI has the +2 offset in loopgen.
+And stop the clone reverse from reading over the end of the sample...
+
+Other bugs:
+The runtime implemation synth() function the loop runs one byte too far due to smp <= SmpLength[..]
+This means an extra iteration of the noise generator per node per instrument.
+Which makes the noise go out of sync with the AmigaKlangGui.
