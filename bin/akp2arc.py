@@ -7,7 +7,7 @@ import os
 import struct
 from parse import *
 
-DEBUG_INSTRUMENT=0
+DEBUG_INSTRUMENT=5
 DEBUG_SAMPLE=0
 
 DECAY_TABLE = [32767, 32767, 32767, 16384, 10922, 8192, 6553, 4681, 3640, 2978, 2520, 2048, 1724, 1489, 1310, 1129, 992, 885, 799, 712, 642, 585, 537, 489, 448, 414, 385, 356, 330, 309, 289, 270, 254, 239, 225, 212, 201, 190, 181, 171, 163, 155, 148, 141, 134, 129, 123, 118, 113, 108, 104, 100, 96, 93, 89, 86, 83, 80, 77, 75, 72, 70, 68, 65, 63, 61, 60, 58, 56, 54, 53, 51, 50, 49, 47, 46, 45, 44, 43, 41, 40, 39, 38, 38, 37, 36, 35, 34, 33, 33, 32, 31, 30, 30, 29, 29, 28, 27, 27, 26, 26, 25, 25, 24, 24, 23, 23, 22, 22, 22, 21, 21, 20, 20, 20, 19, 19, 19, 18, 18, 18, 17, 17, 17, 17, 16, 16, 16]
@@ -1045,7 +1045,7 @@ class AkpParser:
 
         asm_file.write('; TODO: Make ClearDelayLoop conditional.\n')
         asm_file.write(f'\tmov r6, r9\t; Clear scratch space (delay loop).\n')
-        asm_file.write(f'\tmov r4, #65536/16\n')
+        asm_file.write(f'\tmov r4, #AK_TempBuffer_Size/16\n')
         asm_file.write(f'.1:\n')
         asm_file.write('\tstmia r6!, {r0-r3}\n')
         asm_file.write('\tsubs r4, r4, #1\n')
@@ -1118,6 +1118,10 @@ class AkpParser:
         asm_file.write('AK_BodgeSamples:\n')
         asm_file.write('\t.skip AK_MaxInstruments\n')
         asm_file.write('\t.p2align 2\n')
+
+        asm_file.write('\n; ============================================================================\n\n')
+
+        asm_file.write(f'.equ AK_TempBuffer_Size, {self._max_buffers*2048*4}\n')
 
         asm_file.write('\n; ============================================================================\n')
 

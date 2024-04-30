@@ -16,21 +16,21 @@ TODO:
     - ADSR envelope
 - Implement external samples - DONE
 - Test all example MODs - IN PROGRESS
-    - calcpreculation.mod -                     BUILT: 2/26 errors (max 10)
+    - calcpreculation.mod -                     BUILT: PASSED! (after RE-EXPORT)
     - JosSs-Cream.mod -                         BUILT: 2/21 errors (max 1)
-    - JosSs-DualPanoply.mod -                   BUILT: 6/28 errors (max 233)
-    - juice-tremors.mod -                       BUILT: 4/17 errors (max 127)
-    - nah-kolor 'on fire'.mod -                 BUILT: 5/28 errors (max 125)
-    - optimal workflow.mod -                    BUILT: 3/28 errors (max 128)
+    - JosSs-DualPanoply.mod -                   BUILT: 3/28 errors (max 233) - RE-EXPORTED
+    - juice-tremors.mod -                       BUILT: PASSED! (after RE-EXPORT)
+    - nah-kolor 'on fire'.mod -                 BUILT: 4/28 errors (max 3) <= LOOPGEN?
+    - optimal workflow.mod -                    BUILT: 3/28 errors (max 2)
     - tecon-disco transmission.mod -            BUILT: 3/31 errors (max 159)
     - Virgill&Maze-national waffle day.mod -    BUILT: PASSED!
-    - Virgill-80s architecture.mod -            BUILT: 4/27 errors (max 173) (1/27 max 1 when RE-EXPORTED)
+    - Virgill-80s architecture.mod -            BUILT: 1/27 errors (max 1) - RE-EXPORTED
     - Virgill-amigahub.mod -                    BUILT: PASSED! (w/ REVERSE SAMPLE BODGE)
-    - Virgill-atariklang.mod -                  BUILT: 1/21 errors (max 184) (w/ STATIC BUG WORKAROUND)
-    - Virgill-colombia.mod -                    BUILT: 2/25 errors (max 10)
+    - Virgill-atariklang.mod -                  BUILT: PASSED! (w/ STATIC BUG WORKAROUND + RE-EXPORTED)
+    - Virgill-colombia.mod -                    BUILT: 2/25 errors (max 10) <= CHORDGEN BUFFER OVERRUN
     - Virgill-mothership.mod -                  BUILT: PASSED!
     - Virgill-nihil admirari.mod -              BUILT: PASSED!
-    - Virgill-redrum redrum.mod -               BUILT: 4/27 errors (max 102)
+    - Virgill-redrum redrum.mod -               BUILT: PASSED!
 - Implement 16-bit linear to 8-bit log conversion.
 - Smaller code implementation w/ parameterised fn calls rather than inline.
 - Tidy up documentation
@@ -52,3 +52,7 @@ Other bugs:
 The runtime implemation synth() function the loop runs one byte too far due to smp <= SmpLength[..]
 This means an extra iteration of the noise generator per node per instrument.
 Which makes the noise go out of sync with the AmigaKlangGui.
+
+Static counter buf in cmb_flt_n and dly_cyc.
+
+Using reverb and dly_cyc uses more than 8 buffers so need larger temporary workspace...
