@@ -24,9 +24,9 @@ TODO:
     - optimal workflow.mod -                    BUILT: 3/28 errors (max 128)
     - tecon-disco transmission.mod -            BUILT: 3/31 errors (max 159)
     - Virgill&Maze-national waffle day.mod -    BUILT: PASSED!
-    - Virgill-80s architecture.mod -            BUILT: 4/27 errors (max 173)
+    - Virgill-80s architecture.mod -            BUILT: 4/27 errors (max 173) (1/27 max 1 when RE-EXPORTED)
     - Virgill-amigahub.mod -                    BUILT: PASSED! (w/ REVERSE SAMPLE BODGE)
-    - Virgill-atariklang.mod -                  BUILT: 2/21 errors (max 239)
+    - Virgill-atariklang.mod -                  BUILT: 1/21 errors (max 184) (w/ STATIC BUG WORKAROUND)
     - Virgill-colombia.mod -                    BUILT: 2/25 errors (max 10)
     - Virgill-mothership.mod -                  BUILT: PASSED!
     - Virgill-nihil admirari.mod -              BUILT: PASSED!

@@ -414,6 +414,8 @@ class AkpParser:
     def func_dly_cyc(self, asm_file, var, param_string):
         param_strings=parse("{:d}, {}, {}, {}", param_string)
 
+        dly_count=param_strings[0]
+
         val_V=parse("v{:d}", param_strings[1])
         if val_V is None:
             print('WARNING: Expected a var not a const!')
@@ -425,7 +427,8 @@ class AkpParser:
         asm_file.write(f'\tmov r4, r{val_V[0]-1}\n')
         self.vol(asm_file, 5, gain_V, gain_C)
 
-        asm_file.write(f'\tldr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
+        # TODO: Make support for DlyCyc static counter bug an option.
+        asm_file.write(f'\tldr r6, [r10, #AK_DLYCOUNTS+4*{dly_count}]\n')
 
         asm_file.write(f'\tstr r4, [r9, r6, lsl #2]\n')
         asm_file.write(f'\tadd r6, r6, #1\n')
@@ -437,10 +440,8 @@ class AkpParser:
             asm_file.write(f'\tcmp r6, r14\n')
 
         asm_file.write(f'\tmovge r6, #0\n')
-        asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
+        asm_file.write(f'\tstr r6, [r10, #AK_DLYCOUNTS+4*{dly_count}]\n')
         asm_file.write(f'\tldr r{var-1}, [r9, r6, lsl #2]\n')
-
-        self._instance+=1
 
         asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self._buffers+=1
@@ -470,6 +471,8 @@ class AkpParser:
     def func_cmb_flt_n(self, asm_file, var, param_string):
         param_strings=parse("{:d}, {}, {}, {}, {}", param_string)
 
+        cmb_count=param_strings[0]
+
         val_V=parse("v{:d}", param_strings[1])
         if val_V is None:
             print('WARNING: Expected a var not a const!')
@@ -480,7 +483,8 @@ class AkpParser:
         gain_V=parse("v{:d}", param_strings[4])
         gain_C=parse("{:d}", param_strings[4])
 
-        asm_file.write(f'\tldr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
+        # TODO: Make support for CmbFlt static counter bug an option.
+        asm_file.write(f'\tldr r6, [r10, #AK_CMBCOUNTS+4*{cmb_count}]\n')
         asm_file.write(f'\tldr r4, [r9, r6, lsl #2]\n')
 
         self.vol(asm_file, 5, feedback_V, feedback_C)
@@ -498,10 +502,9 @@ class AkpParser:
             asm_file.write(f'\tcmp r6, r14\n')
 
         asm_file.write(f'\tmovge r6, #0\n')
-        asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
+        asm_file.write(f'\tstr r6, [r10, #AK_CMBCOUNTS+4*{cmb_count}]\n')
         
         self.vol(asm_file, var, gain_V, gain_C)
-        self._instance+=1
 
         asm_file.write(f'\tadd r9, r9, #2048*4\n')
         self._buffers+=1
@@ -1019,12 +1022,12 @@ class AkpParser:
         asm_file.write(f'\tadr r4, AK_SmpAddr\n')
         asm_file.write(f'\tmov r7, #{self._num_instruments}\n')
         asm_file.write(f'\tmov r0, #0\n')
-        asm_file.write(f'.1:\n')
+        asm_file.write(f'.0:\n')
         asm_file.write(f'\tldr r6, [r4], #4\n')
         asm_file.write(f'\tstrb r0, [r6]\n')
         asm_file.write(f'\tstrb r0, [r6, #1]\n')
         asm_file.write(f'\tsubs r7, r7, #1\n')
-        asm_file.write(f'\tbne .1\n')
+        asm_file.write(f'\tbne .0\n')
         asm_file.write(f'.endif\n\n')
 
         asm_file.write('\tldr pc, [sp], #4\n\n')
@@ -1090,6 +1093,12 @@ class AkpParser:
         if self._max_dvalues > 0:
             asm_file.write(f'\t.skip {self._max_dvalues}*4\n')
 
+        asm_file.write('AK_CmbCounts:\n')
+        asm_file.write(f'\t.skip 24*4\n')
+
+        asm_file.write('AK_DlyCounts:\n')
+        asm_file.write(f'\t.skip 16*4\n')
+
         asm_file.write('AK_ADSRValues:\n')
         if len(self._adsr_values) > 0:
             for params in self._adsr_values:
@@ -1143,6 +1152,8 @@ class AkpParser:
         asm_file.write('.equ AK_EXTSMPADDR,\t\t(AK_ExtSmpAddr-AK_Vars)\n')
         asm_file.write('.equ AK_OPINSTANCE,\t\t(AK_OpInstance-AK_Vars)\n')
         asm_file.write('.equ AK_ENVDVALUE,\t\t(AK_EnvDValue-AK_Vars)\n')
+        asm_file.write('.equ AK_CMBCOUNTS,\t\t(AK_CmbCounts-AK_Vars)\n')
+        asm_file.write('.equ AK_DLYCOUNTS,\t\t(AK_DlyCounts-AK_Vars)\n')
         asm_file.write('.equ AK_ADSRVALUES,\t\t(AK_ADSRValues-AK_Vars)\n\n')
         asm_file.write('.equ AK_BODGESAMPLES,\t\t(AK_BodgeSamples-AK_Vars)\n\n')
 
