@@ -7,7 +7,7 @@ import os
 import struct
 from parse import *
 
-DEBUG_INSTRUMENT=5
+DEBUG_INSTRUMENT=0
 DEBUG_SAMPLE=0
 
 DECAY_TABLE = [32767, 32767, 32767, 16384, 10922, 8192, 6553, 4681, 3640, 2978, 2520, 2048, 1724, 1489, 1310, 1129, 992, 885, 799, 712, 642, 585, 537, 489, 448, 414, 385, 356, 330, 309, 289, 270, 254, 239, 225, 212, 201, 190, 181, 171, 163, 155, 148, 141, 134, 129, 123, 118, 113, 108, 104, 100, 96, 93, 89, 86, 83, 80, 77, 75, 72, 70, 68, 65, 63, 61, 60, 58, 56, 54, 53, 51, 50, 49, 47, 46, 45, 44, 43, 41, 40, 39, 38, 38, 37, 36, 35, 34, 33, 33, 32, 31, 30, 30, 29, 29, 28, 27, 27, 26, 26, 25, 25, 24, 24, 23, 23, 22, 22, 22, 21, 21, 20, 20, 20, 19, 19, 19, 18, 18, 18, 17, 17, 17, 17, 16, 16, 16]
@@ -152,19 +152,17 @@ class AkpParser:
         gain_V=parse("v{:d}", param_strings[2])
         gain_C=parse("{:d}", param_strings[2])
 
-        asm_file.write(f'\tldr r{var-1}, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
+        asm_file.write(f'\tldr r4, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
 
         if freq_V is not None:
-            if freq_V[0]==var:
-                print('WARNING: Register clash in osc_saw!\n')
-            asm_file.write(f'\tadd r{var-1}, r{var-1}, r{freq_V[0]-1}\n')
+            asm_file.write(f'\tadd r4, r4, r{freq_V[0]-1}\n')
         else:
-            asm_file.write(f'\tadd r{var-1}, r{var-1}, #{freq_C[0]}\n')
+            asm_file.write(f'\tadd r4, r4, #{freq_C[0]}\n')
 
-        self.sign_extend(asm_file, var-1)
-        asm_file.write(f'\tstr r{var-1}, [r10, #AK_OPINSTANCE+4*{self._instance}]\t\n')
+        self.sign_extend(asm_file, 4)
+        asm_file.write(f'\tstr r4, [r10, #AK_OPINSTANCE+4*{self._instance}]\t\n')
 
-        self.vol(asm_file, var, gain_V, gain_C)
+        self.vol_var(asm_file, var, 5, gain_V, gain_C)
         self._instance+=1
 
     def func_sh(self, asm_file, var, param_string):
@@ -571,7 +569,7 @@ class AkpParser:
             asm_file.write(f'\tmov r{var-1}, r5\n')
         elif mode==2:
             asm_file.write(f'\tmov r{var-1}, r6\n')
-        elif mode==2:
+        elif mode==3:
             asm_file.write(f'\tadd r{var-1}, r5, r6\n')
             self.clamp(asm_file, var)
 

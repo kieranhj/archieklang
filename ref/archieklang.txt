@@ -18,16 +18,16 @@ TODO:
 - Test all example MODs - IN PROGRESS
     - calcpreculation.mod -                     BUILT: PASSED! (after RE-EXPORT)
     - JosSs-Cream.mod -                         BUILT: 2/21 errors (max 1)
-    - JosSs-DualPanoply.mod -                   BUILT: 3/28 errors (max 233) - RE-EXPORTED
+    - JosSs-DualPanoply.mod -                   BUILT: PASSED! (notch)
     - juice-tremors.mod -                       BUILT: PASSED! (after RE-EXPORT)
-    - nah-kolor 'on fire'.mod -                 BUILT: 4/28 errors (max 3) <= LOOPGEN?
-    - optimal workflow.mod -                    BUILT: 3/28 errors (max 2)
-    - tecon-disco transmission.mod -            BUILT: 3/31 errors (max 159)
+    - nah-kolor 'on fire'.mod -                 BUILT: 4/28 errors (max 3) <= CHORDGEN
+    - optimal workflow.mod -                    BUILT: 3/28 errors (max 2) <= CHORDGEN
+    - tecon-disco transmission.mod -            BUILT: 2/31 errors (max 159) <= NOISE
     - Virgill&Maze-national waffle day.mod -    BUILT: PASSED!
     - Virgill-80s architecture.mod -            BUILT: 1/27 errors (max 1) - RE-EXPORTED
     - Virgill-amigahub.mod -                    BUILT: PASSED! (w/ REVERSE SAMPLE BODGE)
     - Virgill-atariklang.mod -                  BUILT: PASSED! (w/ STATIC BUG WORKAROUND + RE-EXPORTED)
-    - Virgill-colombia.mod -                    BUILT: 2/25 errors (max 10) <= CHORDGEN BUFFER OVERRUN
+    - Virgill-colombia.mod -                    BUILT: 2/25 errors (max 10) <= CHORDGEN
     - Virgill-mothership.mod -                  BUILT: PASSED!
     - Virgill-nihil admirari.mod -              BUILT: PASSED!
     - Virgill-redrum redrum.mod -               BUILT: PASSED!
