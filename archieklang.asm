@@ -503,3 +503,5 @@ MOD_data:
 .incbin "build/music.mod.trk"
 
 Generated_Samples:
+
+; NB. Temporary buffer beyond Generated_Samples of AK_TempBuffer_Size bytes.
