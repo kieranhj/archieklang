@@ -9,7 +9,7 @@
 .equ _LOG_SAMPLES,              0
 ;.equ _EXTERNAL_SAMPLES,        1  ; Now provided by make.bat
 
-.equ AK_CLEAR_FIRST_2_BYTES,    1   ; TODO: Make this a script option?
+.equ AK_CLEAR_FIRST_2_BYTES,    0   ; TODO: Make this a script option?
 
 .include "lib/swis.h.asm"
 

@@ -203,7 +203,7 @@ v2 = envd(0, 4, 8, 80);
 v1 = clone(smp,3, 32);
 v1 = mul(v1, v2);
 
-$ colombia_missing_chord, 10240, 5119, 5121, Y
+$ colombia_missing_chord, 10240, 5120, 5120, Y
 #
 v1 = osc_saw(0, 2000, 16);
 v1 = clone_reverse(smp,13, 0);

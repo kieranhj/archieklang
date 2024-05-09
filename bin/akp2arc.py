@@ -13,8 +13,9 @@ DEBUG_SAMPLE=0
 DECAY_TABLE = [32767, 32767, 32767, 16384, 10922, 8192, 6553, 4681, 3640, 2978, 2520, 2048, 1724, 1489, 1310, 1129, 992, 885, 799, 712, 642, 585, 537, 489, 448, 414, 385, 356, 330, 309, 289, 270, 254, 239, 225, 212, 201, 190, 181, 171, 163, 155, 148, 141, 134, 129, 123, 118, 113, 108, 104, 100, 96, 93, 89, 86, 83, 80, 77, 75, 72, 70, 68, 65, 63, 61, 60, 58, 56, 54, 53, 51, 50, 49, 47, 46, 45, 44, 43, 41, 40, 39, 38, 38, 37, 36, 35, 34, 33, 33, 32, 31, 30, 30, 29, 29, 28, 27, 27, 26, 26, 25, 25, 24, 24, 23, 23, 22, 22, 22, 21, 21, 20, 20, 20, 19, 19, 19, 18, 18, 18, 17, 17, 17, 17, 16, 16, 16]
 
 class AkpParser:
-    def __init__(self, akp_file) -> None:
+    def __init__(self, akp_file, legacy_bugs) -> None:
         self._akp_file = akp_file
+        self._legacy_bugs = legacy_bugs
 
     def sign_extend(self, asm_file, reg):
         asm_file.write(f'\tmov r{reg}, r{reg}, asl #16\n')
@@ -395,17 +396,24 @@ class AkpParser:
         else:
             asm_file.write(f'\tmovs r{var-1}, r7\n')
 
-        # TODO: Make bodge sample code a script option.
-        asm_file.write(f'\tldreqb r{var-1}, [r10, #AK_BODGESAMPLES+{params[1]+1}]\n')
-        asm_file.write(f'\tbeq CloneReverse_Bodge_{self._inst_nr}\n')
+        if self._legacy_bugs:
+            asm_file.write(f'\tldreqb r{var-1}, [r10, #AK_BODGESAMPLES+{params[1]+1}]\n')
+            asm_file.write(f'\tbeq CloneReverse_Bodge_{self._inst_nr}\n')
 
         asm_file.write(f'\tldr r6, [r10, #AK_SMPADDR+4*{params[1]}]\n')
         asm_file.write(f'\tldr r4, [r10, #AK_SMPLEN+4*{params[1]}]\n')
         asm_file.write(f'\tcmp r{var-1}, r4\n')
         asm_file.write(f'\tmovge r{var-1}, #0\n')
         asm_file.write(f'\tsublt r{var-1}, r4, r{var-1}\n')
+
+        if self._legacy_bugs is False:
+            asm_file.write(f'\tsublt r{var-1}, r{var-1}, #1\t; BUG FIX: -1 from length to avoid reading beyond end of sample\n')
+
         asm_file.write(f'\tldrltb r{var-1}, [r6, r{var-1}]\n')
-        asm_file.write(f'CloneReverse_Bodge_{self._inst_nr}:\n')
+
+        if self._legacy_bugs:
+            asm_file.write(f'CloneReverse_Bodge_{self._inst_nr}:\n')
+
         asm_file.write(f'\tmov r{var-1}, r{var-1}, asl #24\n')
         asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #16\n')
 
@@ -431,8 +439,10 @@ class AkpParser:
         asm_file.write(f'\tmov r4, r{val_V[0]-1}\n')
         self.vol(asm_file, 5, gain_V, gain_C)
 
-        # TODO: Make support for DlyCyc static counter bug an option.
-        asm_file.write(f'\tldr r6, [r10, #AK_DLYCOUNTS+4*{dly_count}]\n')
+        if self._legacy_bugs:
+            asm_file.write(f'\tldr r6, [r10, #AK_DLYCOUNTS+4*{dly_count}]\n')
+        else:
+            asm_file.write(f'\tldr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
 
         asm_file.write(f'\tstr r4, [r9, r6, lsl #2]\n')
         asm_file.write(f'\tadd r6, r6, #1\n')
@@ -444,7 +454,13 @@ class AkpParser:
             asm_file.write(f'\tcmp r6, r14\n')
 
         asm_file.write(f'\tmovge r6, #0\n')
-        asm_file.write(f'\tstr r6, [r10, #AK_DLYCOUNTS+4*{dly_count}]\n')
+
+        if self._legacy_bugs:
+            asm_file.write(f'\tstr r6, [r10, #AK_DLYCOUNTS+4*{dly_count}]\n')
+        else:
+            asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
+            self._instance+=1
+
         asm_file.write(f'\tldr r{var-1}, [r9, r6, lsl #2]\n')
 
         asm_file.write(f'\tadd r9, r9, #2048*4\t; next temp buffer.\n')
@@ -487,8 +503,11 @@ class AkpParser:
         gain_V=parse("v{:d}", param_strings[4])
         gain_C=parse("{:d}", param_strings[4])
 
-        # TODO: Make support for CmbFlt static counter bug an option.
-        asm_file.write(f'\tldr r6, [r10, #AK_CMBCOUNTS+4*{cmb_count}]\n')
+        if self._legacy_bugs:
+            asm_file.write(f'\tldr r6, [r10, #AK_CMBCOUNTS+4*{cmb_count}]\n')
+        else:
+            asm_file.write(f'\tldr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
+
         asm_file.write(f'\tldr r4, [r9, r6, lsl #2]\n')
 
         self.vol(asm_file, 5, feedback_V, feedback_C)
@@ -506,7 +525,12 @@ class AkpParser:
             asm_file.write(f'\tcmp r6, r14\n')
 
         asm_file.write(f'\tmovge r6, #0\n')
-        asm_file.write(f'\tstr r6, [r10, #AK_CMBCOUNTS+4*{cmb_count}]\n')
+
+        if self._legacy_bugs:
+            asm_file.write(f'\tstr r6, [r10, #AK_CMBCOUNTS+4*{cmb_count}]\n')
+        else:
+            asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*{self._instance}]\n')
+            self._instance+=1
         
         self.vol(asm_file, var, gain_V, gain_C)
 
@@ -566,8 +590,6 @@ class AkpParser:
             asm_file.write(f'\tmla r6, r12, r14, r6\n')
 
         self.clamp(asm_file, 7) # r6
-
-        # TODO: Replace with stmia?
         asm_file.write(f'\tstr r6, [r10, #AK_OPINSTANCE+4*({self._instance}+AK_BPF)]\n')
 
         if mode==0:
@@ -595,8 +617,8 @@ class AkpParser:
         asm_file.write(f'\tldr r5, [r10, #AK_OPINSTANCE+4*({self._instance}+{chord_var})]\n')
 
         asm_file.write(f'\tcmp r12, r5, lsr #{8+mult_shift}\n')
-        asm_file.write(f'\tldrgeb r14, [r4, r5, lsr #{8+mult_shift}]\n')
-        asm_file.write(f'\tmovlt r14, #0\n')
+        asm_file.write(f'\tldrgtb r14, [r4, r5, lsr #{8+mult_shift}]\n')
+        asm_file.write(f'\tmovle r14, #0\n')
 
         asm_file.write(f'\tadd r5, r5, #{mult_val<<8}\n')
         asm_file.write(f'\tstr r5, [r10, #AK_OPINSTANCE+4*({self._instance}+{chord_var})]\n')
@@ -864,8 +886,11 @@ class AkpParser:
                 asm_file.write(f'\tmov r4, #{self._buffers}\t; buffers to clear\n')
             asm_file.write(f'\tbl AK_ResetVars\n')
             asm_file.write(f'\tmov r7, #0\t; Sample byte count\n')
-            asm_file.write(f'\tldrb r4, [r8]\n')
-            asm_file.write(f'\tstrb r4, [r10, #AK_BODGESAMPLES+{self._inst_nr-1}]\t; store overflow byte.\n')
+
+            if self._legacy_bugs:
+                asm_file.write(f'\tldrb r4, [r8]\n')
+                asm_file.write(f'\tstrb r4, [r10, #AK_BODGESAMPLES+{self._inst_nr-1}]\t; store overflow byte.\n')
+
             asm_file.write(f'\n\tAK_PROGRESS\n\n')
             asm_file.write(f'Inst{self._inst_nr}Loop:\n')
 
@@ -965,10 +990,17 @@ class AkpParser:
                 asm_file.write(f"; Instrument {self._inst_nr} - Loop Generator (Offset: {inst_def['rep_off']} Length: {inst_def['rep_len']})\n")
                 asm_file.write(f';----------------------------------------------------------------------------\n\n')
 
-                asm_file.write(f"\tmov r7, #{inst_def['rep_len']}\n")
+                if inst_def['rep_len'] <= 2:
+                    print(f'WARNING: Expected loopgen length to be > 2!\n')
+
+                if self._legacy_bugs:
+                    asm_file.write(f"\tmov r7, #{inst_def['rep_len']}\n")
+                else:
+                    asm_file.write(f"\tmov r7, #{inst_def['rep_len'] - 2}\t; BUG FIX: -2 from length to avoid reading beyond end of buffer\n")
+                
                 asm_file.write(f'\tldr r6, [r10, #AK_SMPADDR+4*{self._inst_nr-1}]\n')
-                asm_file.write(f"\tadd r6, r6, #{inst_def['rep_off']}\t; src1\n")
-                asm_file.write(f"\tadd r6, r6, #2\t; additional +2 offset in AmigaKlangGUI\n")
+                asm_file.write(f"\tadd r6, r6, #{inst_def['rep_off']+2}\t; src1 (additional +2 offset in AmigaKlangGUI because Amiga)\n\n")
+
                 asm_file.write(f'\tsub r4, r6, r7\t; src2\n')
                 asm_file.write(f'\tmov r0, r11, lsl #8\t; 32767<<8\n')
                 asm_file.write(f'\tmov r1, r7\n')
@@ -1125,8 +1157,9 @@ class AkpParser:
                 asm_file.write(f'\t.long {peak}\t; peak\n')
 
         asm_file.write('AK_BodgeSamples:\n')
-        asm_file.write('\t.skip AK_MaxInstruments\n')
-        asm_file.write('\t.p2align 2\n')
+        if self._legacy_bugs:
+            asm_file.write('\t.skip AK_MaxInstruments\n')
+            asm_file.write('\t.p2align 2\n')
 
         asm_file.write('\n; ============================================================================\n\n')
 
@@ -1247,6 +1280,7 @@ if __name__ == '__main__':
     parser.add_argument("input", help="Amigaklang exe script.")
     parser.add_argument("-o", "--output", metavar="<output>", help="Write ARM asm file to <output> (default is 'archieklang.asm')")
     parser.add_argument("-v", "--verbose", action="store_true", help="Print all the debugs")
+    parser.add_argument("-b", "--bugs", action="store_true", help="Support legacy bugs")
     args = parser.parse_args()
 
     global g_verbose
@@ -1266,7 +1300,7 @@ if __name__ == '__main__':
     asm_file = open(dst, 'w')
 
     # Output Archie ARM asm.
-    parser = AkpParser(akp_file)
+    parser = AkpParser(akp_file, args.bugs)
     parser.ParseHeader()
     parser.WriteHeader(asm_file)
     akp_file.seek(0)
