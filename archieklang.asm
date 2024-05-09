@@ -2,14 +2,16 @@
 ; ArchieKlang test harness.
 ; ============================================================================
 
-.equ _VERIFY_SAMPLES,           1
+.equ _VERIFY_SAMPLES,           0
 .equ _PLAY_SONG,                1
-.equ _SAVE_GEN_SAMPLES,         1
+.equ _SAVE_GEN_SAMPLES,         0
 .equ _EMBED_QTM,                (_PLAY_SONG && 1)
-.equ _LOG_SAMPLES,              0
+.equ _LOG_SAMPLES,              1
 ;.equ _EXTERNAL_SAMPLES,        1  ; Now provided by make.bat
 
 .equ AK_CLEAR_FIRST_2_BYTES,    0   ; TODO: Make this a script option?
+
+.equ QTM_SampleSpeed,           24
 
 .include "lib/swis.h.asm"
 
@@ -284,13 +286,23 @@ main:
     adr r0, logconv_msg
     swi OS_WriteO
 
+    ; Get ptr to log conversion table.
+    ; Much faster than using swi Sound_SoundLog!
+    mov r0, #0
+    mov r1, #0
+    mov r2, #0
+    mov r3, #0
+    mov r4, #0
+    swi Sound_Configure
+    ldr r10, [r3, #8]   ; lin to log ptr.
+
+    ; Convert 8-bit linear sample to log.
     ldr r8, generated_samples_p
     ldr r9, total_sample_size
     add r9, r9, r8
     .20:
     ldrb r0, [r8]
-    mov r0, r0, asl #24
-    swi Sound_SoundLog
+    ldrb r0, [r10, r0, lsl #24-19]  ; 32-bit lin->log
     strb r0, [r8], #1
     movs r1, r8, lsl #20            ; every 8k
     swieq OS_WriteI+'.'
@@ -313,6 +325,9 @@ main:
     adr lr, .10
     ldr pc, QtmEmbedded_Init
     .10:
+
+    mov r0, #QTM_SampleSpeed
+	QTMSWI QTM_SetSampleSpeed
     .endif
 
     mov r0, #0

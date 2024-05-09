@@ -137,7 +137,8 @@
 
 .equ Wimp_SlotSize, 0x400EC
 
-.equ Sound_SoundLog,0x40181
+.equ Sound_Configure, 0x40140
+.equ Sound_SoundLog, 0x40181
 
 .equ QTM_SwiBase, 0x47E40
 .equ QTM_Load, 0x47E40

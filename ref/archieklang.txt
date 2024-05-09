@@ -31,19 +31,25 @@ TODO:
     - Virgill-mothership.mod -                  BUILT: PASSED!
     - Virgill-nihil admirari.mod -              BUILT: PASSED!
     - Virgill-redrum redrum.mod -               BUILT: PASSED!
-- Implement 16-bit linear to 8-bit log conversion.
+- Implement 16-bit linear to 8-bit log conversion. - NOT DOING
+    - Can't do this inline due to clone sample :S
+    - Would have to save all samples at 16/32-bit linear then log convert after.
+    - Not impossible but shelve for now.
 - Smaller code implementation w/ parameterised fn calls rather than inline.
-- Tidy up documentation
+- Tidy up documentation.
 - Replacement aklang2asm.bat for Archie - IN PROGRESS
 - Contact Virgill - IN PROGRESS
+- Update AmigaKlangGUI to fix known bugs - IN PROGRESS
+- Update AmigaKlangGUI to add Archie colour theme - IN PROGRESS
 
-CloneReverse is bug:
+1/ CloneReverse is bug:
 Clone Reverse reads one byte beyond the end of the cloned sample.
 In AmigaKlangGUI the sample data is held in separate arrays.
 In AmigaKlangGUI this is fine as it contains the overrun sample data.
 In runtime implementations this reads the first byte of the next sample.
 Only solution for this would be to store the extra byte somewhere after doing loopgen.
 Then special case reading this byte...
+FIX: Start reading sample from length-1
 
 LoopGen bug:
 Ask Virgill why the AmigaKlangGUI has the +2 offset in loopgen.
@@ -51,12 +57,7 @@ And stop the clone reverse from reading over the end of the sample...
 Looks like sample lengths can only be even. => Amiga limitation
 Looks like loop length can only be even. => All Amiga samples loop.
 Loop offset < loop length requires +2
-Need to understand the logic here a bit more.
-It's the loop offset that gets set in the GUI.
-With looplength being calculated as sample length - loopoffset.
-loopoffset cannot be < sample length / 2.
-But what happens when sample length % 2 == 1?
-To be continued...
+FIX: Assume loop length is actually -2
 
 Noise bug:
 The runtime implemation synth() function the loop runs one byte too far due to smp <= SmpLength[..]
@@ -65,7 +66,7 @@ Which makes the noise go out of sync with the AmigaKlangGUI.
 
 Static counter bug:
 Static index arrays in cmb_flt_n and dly_cyc never get reset.
-==> Easy fix just add Array.Clear calls to initarrays()
+FIX: just add Array.Clear calls to initarrays()
 
 Temp buffer bug:
 Using reverb and dly_cyc uses more than 8 buffers so need larger temporary workspace...
