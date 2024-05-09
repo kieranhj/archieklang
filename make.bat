@@ -25,7 +25,7 @@ ren "build\%1.trk" music.mod.trk
 ren "build\%1.i" music.mod.i
 
 echo Generating code...
-python bin\akp2arc.py scripts\%1.txt -o build\arcmusic.asm
+python bin\akp2arc.py scripts\%1.txt -l -o build\arcmusic.asm
 
 if %ERRORLEVEL% neq 0 (
 	echo Failed to generate ArchieKlang code.

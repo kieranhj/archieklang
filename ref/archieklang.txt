@@ -32,10 +32,13 @@ TODO:
     - Virgill-nihil admirari.mod -              BUILT: PASSED!
     - Virgill-redrum redrum.mod -               BUILT: PASSED!
 - Implement 16-bit linear to 8-bit log conversion.
+    - ARGH! Can't do this because of clone sample.
 - Smaller code implementation w/ parameterised fn calls rather than inline.
 - Tidy up documentation
 - Replacement aklang2asm.bat for Archie - IN PROGRESS
 - Contact Virgill - IN PROGRESS
+- Update AmigaKlangGUI for Archie output - IN PROGRESS
+- Add Archie colour theme to AmigaKlangGUI - IN PROGRESS
 
 CloneReverse is bug:
 Clone Reverse reads one byte beyond the end of the cloned sample.

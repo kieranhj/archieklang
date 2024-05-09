@@ -6,7 +6,8 @@
 .equ _PLAY_SONG,                1
 .equ _SAVE_GEN_SAMPLES,         1
 .equ _EMBED_QTM,                (_PLAY_SONG && 1)
-.equ _LOG_SAMPLES,              0
+.equ _LOG_SAMPLES,              1
+.equ _LOG_EXTENDED,             1
 ;.equ _EXTERNAL_SAMPLES,        1  ; Now provided by make.bat
 
 .equ AK_CLEAR_FIRST_2_BYTES,    0   ; TODO: Make this a script option?
@@ -84,6 +85,9 @@ main:
 
     ldr r8, generated_samples_p
     ldr r9, total_sample_size
+    .if _LOG_EXTENDED
+    add r9, r9, #65536
+    .endif
     add r9, r9, #0xff
     add r9, r9, r8
     bic r9, r9, #0xff
@@ -280,7 +284,7 @@ main:
     ; Convert samples to log.
     ; ============================================================================
 
-    .if _LOG_SAMPLES
+    .if _LOG_SAMPLES && !_LOG_EXTENDED
     adr r0, logconv_msg
     swi OS_WriteO
 

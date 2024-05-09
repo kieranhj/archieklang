@@ -13,9 +13,10 @@ DEBUG_SAMPLE=0
 DECAY_TABLE = [32767, 32767, 32767, 16384, 10922, 8192, 6553, 4681, 3640, 2978, 2520, 2048, 1724, 1489, 1310, 1129, 992, 885, 799, 712, 642, 585, 537, 489, 448, 414, 385, 356, 330, 309, 289, 270, 254, 239, 225, 212, 201, 190, 181, 171, 163, 155, 148, 141, 134, 129, 123, 118, 113, 108, 104, 100, 96, 93, 89, 86, 83, 80, 77, 75, 72, 70, 68, 65, 63, 61, 60, 58, 56, 54, 53, 51, 50, 49, 47, 46, 45, 44, 43, 41, 40, 39, 38, 38, 37, 36, 35, 34, 33, 33, 32, 31, 30, 30, 29, 29, 28, 27, 27, 26, 26, 25, 25, 24, 24, 23, 23, 22, 22, 22, 21, 21, 20, 20, 20, 19, 19, 19, 18, 18, 18, 17, 17, 17, 17, 16, 16, 16]
 
 class AkpParser:
-    def __init__(self, akp_file, legacy_bugs) -> None:
+    def __init__(self, akp_file, legacy_bugs, linear) -> None:
         self._akp_file = akp_file
         self._legacy_bugs = legacy_bugs
+        self._log_extend = linear
 
     def sign_extend(self, asm_file, reg):
         asm_file.write(f'\tmov r{reg}, r{reg}, asl #16\n')
@@ -880,7 +881,7 @@ class AkpParser:
 
             self._akp_file.readline()       # swallow hash line
 
-            if self._inst_nr==1:
+            if self._inst_nr==1 or self._log_extend:
                 asm_file.write(f'\tmov r4, #AK_MaxTempBuffers\t; buffers to clear\n')
             else:
                 asm_file.write(f'\tmov r4, #{self._buffers}\t; buffers to clear\n')
@@ -977,8 +978,12 @@ class AkpParser:
             if self._buffers > 0:
                 asm_file.write(f'\tsub r9, r9, #2048*4*{self._buffers}\t; reset temp buffer base.\n')
 
-            asm_file.write(f'\tmov r4, r0, asr #8\n')
-            asm_file.write(f'\tstrb r4, [r8], #1\n')
+            if self._log_extend:
+                asm_file.write(f'\tstr r0, [r8], #4\t; store full linear word.\n')
+            else:
+                asm_file.write(f'\tmov r4, r0, asr #8\n')
+                asm_file.write(f'\tstrb r4, [r8], #1\n')
+
             asm_file.write(f'\n\tAK_FINE_PROGRESS\n\n')
             asm_file.write(f'\tadd r7, r7, #1\n')
             asm_file.write(f'\tldr r4, [r10, #AK_SMPLEN+4*{self._inst_nr-1}]\n')
@@ -999,9 +1004,14 @@ class AkpParser:
                     asm_file.write(f"\tmov r7, #{inst_def['rep_len'] - 2}\t; BUG FIX: -2 from length to avoid reading beyond end of buffer\n")
                 
                 asm_file.write(f'\tldr r6, [r10, #AK_SMPADDR+4*{self._inst_nr-1}]\n')
-                asm_file.write(f"\tadd r6, r6, #{inst_def['rep_off']+2}\t; src1 (additional +2 offset in AmigaKlangGUI because Amiga)\n\n")
 
-                asm_file.write(f'\tsub r4, r6, r7\t; src2\n')
+                if self._log_extend:
+                    asm_file.write(f"\tadd r6, r6, #4*{inst_def['rep_off']+2}\t; src1 (additional +2 offset in AmigaKlangGUI because Amiga)\n\n")
+                    asm_file.write(f'\tsub r4, r6, r7, lsl #2\t; src2\n')
+                else:
+                    asm_file.write(f"\tadd r6, r6, #{inst_def['rep_off']+2}\t; src1 (additional +2 offset in AmigaKlangGUI because Amiga)\n\n")
+                    asm_file.write(f'\tsub r4, r6, r7\t; src2\n')
+
                 asm_file.write(f'\tmov r0, r11, lsl #8\t; 32767<<8\n')
                 asm_file.write(f'\tmov r1, r7\n')
                 asm_file.write(f'\tbl divide\n')
@@ -1020,13 +1030,19 @@ class AkpParser:
                 asm_file.write(f'\tmov r3, r14, lsr #8\n')
                 asm_file.write(f'\tmov r2, r12, lsr #8\n')
 
-                asm_file.write(f'\tldrb r1, [r6]\n')
-                asm_file.write(f'\tmov r1, r1, asl #24\n')
-                asm_file.write(f'\tmov r1, r1, asr #24\n')
+                if self._log_extend:
+                    asm_file.write(f'\tldr r1, [r6]\t; read full linear word.\n')
+                else:
+                    asm_file.write(f'\tldrb r1, [r6]\n')
+                    asm_file.write(f'\tmov r1, r1, asl #24\n')
+                    asm_file.write(f'\tmov r1, r1, asr #24\n')
 
-                asm_file.write(f'\tldrb r0, [r4], #1\n')
-                asm_file.write(f'\tmov r0, r0, asl #24\n')
-                asm_file.write(f'\tmov r0, r0, asr #24\n')
+                if self._log_extend:
+                    asm_file.write(f'\tldr r0, [r4], #4\t; read full linear word.\n')
+                else:
+                    asm_file.write(f'\tldrb r0, [r4], #1\n')
+                    asm_file.write(f'\tmov r0, r0, asl #24\n')
+                    asm_file.write(f'\tmov r0, r0, asr #24\n')
 
                 # Actual loopgen code in synthnodes.c:
                 # asm_file.write(f'\tmul r0, r3, r0\n')
@@ -1034,20 +1050,40 @@ class AkpParser:
                 # asm_file.write(f'\tmov r0, r0, lsr #15\n')
                 # TODO: Make this a script option?
 
-                # Actual loopgen code in AmigaKlangGUI:
-                asm_file.write(f'\tmul r0, r3, r0\n')
-                asm_file.write(f'\tmov r0, r0, asr #7\n')
-                asm_file.write(f'\tmul r1, r2, r1\n')
-                asm_file.write(f'\tadd r0, r0, r1, asr #7\n')
-                asm_file.write(f'\tmov r0, r0, asr #8\n')
+                if self._log_extend:
+                    asm_file.write(f'\tmul r0, r3, r0\n')
+                    asm_file.write(f'\tmla r0, r1, r2, r0\n')
+                    asm_file.write(f'\tmov r0, r0, lsr #15\n')
 
-                asm_file.write(f'\tstrb r0, [r6], #1\n')
+                    asm_file.write(f'\tstr r0, [r6], #4\t; store full linear word.\n')
+                else:
+                    # Actual loopgen code in AmigaKlangGUI:
+                    asm_file.write(f'\tmul r0, r3, r0\n')
+                    asm_file.write(f'\tmov r0, r0, asr #7\n')
+                    asm_file.write(f'\tmul r1, r2, r1\n')
+                    asm_file.write(f'\tadd r0, r0, r1, asr #7\n')
+
+                    asm_file.write(f'\tmov r0, r0, asr #8\n')
+                    asm_file.write(f'\tstrb r0, [r6], #1\n')
 
                 asm_file.write(f'\tadd r14, r14, r5\n')
                 asm_file.write(f'\tsub r12, r12, r5\n')
                 asm_file.write(f'\n\tAK_FINE_PROGRESS\n\n')
                 asm_file.write(f'\tsubs r7, r7, #1\n')
                 asm_file.write(f"\tbne LoopGen_{self._inst_nr}\n\n")
+
+            if self._log_extend:
+                asm_file.write(f'\tldr r4, [r10, #AK_SMPLEN+4*{self._inst_nr-1}]\n')
+                asm_file.write(f'\tldr r6, [r10, #AK_SMPADDR+4*{self._inst_nr-1}]\n')
+                asm_file.write(f'\tmov r8, r6\n')
+                asm_file.write(f'.1:\n')
+                asm_file.write(f'\tldr r0, [r6], #4\n')
+                asm_file.write(f'\tmov r0, r0, asr #8\n')
+                asm_file.write(f'\tmov r0, r0, asl #24\n')
+                asm_file.write(f'\tswi Sound_SoundLog\n')
+                asm_file.write(f'\tstrb r0, [r8], #1\n')
+                asm_file.write(f'\tsubs r4, r4, #1\n')
+                asm_file.write(f'\tbne .1\n\n')
 
         print(f'{self._inst_nr} total instruments.')
         assert(self._inst_nr==self._num_instruments)
@@ -1279,8 +1315,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("input", help="Amigaklang exe script.")
     parser.add_argument("-o", "--output", metavar="<output>", help="Write ARM asm file to <output> (default is 'archieklang.asm')")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Print all the debugs")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Print all the debugs [UNUSED]")
     parser.add_argument("-b", "--bugs", action="store_true", help="Support legacy bugs")
+    parser.add_argument("-l", "--log", action="store_true", help="Interleave log conversion with expanded range")
     args = parser.parse_args()
 
     global g_verbose
@@ -1289,7 +1326,11 @@ if __name__ == '__main__':
     src = args.input
     # check for missing files
     if not os.path.isfile(src):
-        print(f"ERROR: File '{src}' not found")
+        print(f"ERROR: File '{src}' not found.")
+        sys.exit(1)
+
+    if args.bugs and args.log:
+        print(f"ERROR: Cannot support log conversion with legacy bugs.")
         sys.exit(1)
 
     dst = args.output
@@ -1300,7 +1341,7 @@ if __name__ == '__main__':
     asm_file = open(dst, 'w')
 
     # Output Archie ARM asm.
-    parser = AkpParser(akp_file, args.bugs)
+    parser = AkpParser(akp_file, args.bugs, args.log)
     parser.ParseHeader()
     parser.WriteHeader(asm_file)
     akp_file.seek(0)
