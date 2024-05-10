@@ -1,4 +1,9 @@
-# Convert Amigaklang patch data to ARM asm.
+# Aklang2Acorn.py (aka akp2arc.py) version 1.0 (May 2024).
+# Converts Amigaklang patch data to ARM asm from Dan table (aka 'script.txt')
+# Written by kieran/Bitshifters. (https://bitshifters.github.io/)
+# Based on Alcatraz Amigaklang rendering core. (c) Jochen 'Virgill' Feldkötter 2020-2024.
+# And Aklang2Asm V1.1, by Dan/Lemon. 2021-2022.
+# Please excuse my terrible non-Pythonic code. :D
 
 import argparse
 import binascii
@@ -7,8 +12,8 @@ import os
 import struct
 from parse import *
 
-DEBUG_INSTRUMENT=0
-DEBUG_SAMPLE=0
+DEBUG_INSTRUMENT=0  # Set to instrument number to insert breakpoint code.
+DEBUG_SAMPLE=0      # Set to sample number for instrument to insert breakpoint code.
 
 DECAY_TABLE = [32767, 32767, 32767, 16384, 10922, 8192, 6553, 4681, 3640, 2978, 2520, 2048, 1724, 1489, 1310, 1129, 992, 885, 799, 712, 642, 585, 537, 489, 448, 414, 385, 356, 330, 309, 289, 270, 254, 239, 225, 212, 201, 190, 181, 171, 163, 155, 148, 141, 134, 129, 123, 118, 113, 108, 104, 100, 96, 93, 89, 86, 83, 80, 77, 75, 72, 70, 68, 65, 63, 61, 60, 58, 56, 54, 53, 51, 50, 49, 47, 46, 45, 44, 43, 41, 40, 39, 38, 38, 37, 36, 35, 34, 33, 33, 32, 31, 30, 30, 29, 29, 28, 27, 27, 26, 26, 25, 25, 24, 24, 23, 23, 22, 22, 22, 21, 21, 20, 20, 20, 19, 19, 19, 18, 18, 18, 17, 17, 17, 17, 16, 16, 16]
 
@@ -397,8 +402,8 @@ class AkpParser:
             asm_file.write(f'\tmovs r{var-1}, r7\n')
 
         if self._legacy_bugs:
-            asm_file.write(f'\tldreqb r{var-1}, [r10, #AK_BODGESAMPLES+{params[1]+1}]\n')
-            asm_file.write(f'\tbeq CloneReverse_Bodge_{self._inst_nr}\n')
+            asm_file.write(f'\tldreqb r{var-1}, [r10, #AK_OVERFLOWSAMPLES+{params[1]+1}]\n')
+            asm_file.write(f'\tbeq CloneReverse_Overflow_{self._inst_nr}\n')
 
         asm_file.write(f'\tldr r6, [r10, #AK_SMPADDR+4*{params[1]}]\n')
         asm_file.write(f'\tldr r4, [r10, #AK_SMPLEN+4*{params[1]}]\n')
@@ -412,7 +417,7 @@ class AkpParser:
         asm_file.write(f'\tldrltb r{var-1}, [r6, r{var-1}]\n')
 
         if self._legacy_bugs:
-            asm_file.write(f'CloneReverse_Bodge_{self._inst_nr}:\n')
+            asm_file.write(f'CloneReverse_Overflow_{self._inst_nr}:\n')
 
         asm_file.write(f'\tmov r{var-1}, r{var-1}, asl #24\n')
         asm_file.write(f'\tmov r{var-1}, r{var-1}, asr #16\n')
@@ -889,7 +894,7 @@ class AkpParser:
 
             if self._legacy_bugs:
                 asm_file.write(f'\tldrb r4, [r8]\n')
-                asm_file.write(f'\tstrb r4, [r10, #AK_BODGESAMPLES+{self._inst_nr-1}]\t; store overflow byte.\n')
+                asm_file.write(f'\tstrb r4, [r10, #AK_OVERFLOWSAMPLES+{self._inst_nr-1}]\t; store overflow byte.\n')
 
             asm_file.write(f'\n\tAK_PROGRESS\n\n')
             asm_file.write(f'Inst{self._inst_nr}Loop:\n')
@@ -1060,7 +1065,7 @@ class AkpParser:
         asm_file.write(f'.if AK_CLEAR_FIRST_2_BYTES\n')
         asm_file.write(f'\t; Clear first 2 bytes of each sample\n')
         asm_file.write(f'\tadr r4, AK_SmpAddr\n')
-        asm_file.write(f'\tmov r7, #{self._num_instruments}\n')
+        asm_file.write(f'\tmov r7, #{self._num_instruments}\t; Num instruments.\n')
         asm_file.write(f'\tmov r0, #0\n')
         asm_file.write(f'.0:\n')
         asm_file.write(f'\tldr r6, [r4], #4\n')
@@ -1093,13 +1098,16 @@ class AkpParser:
 
         asm_file.write(f'.2:\n')
         asm_file.write(f'\tadd r6, r10, #AK_OPINSTANCE\n')
-        asm_file.write(f'\t.rept {self._max_instances}\n')
+        asm_file.write(f'\t.rept {self._max_instances}\t; Max OpInstance values.\n')
         asm_file.write(f'\tstr r0, [r6], #4\n')
         asm_file.write(f'\t.endr\n')
-        asm_file.write(f'\tmov r4, r11, lsl #16\t; 32767<<16\n')
-        asm_file.write(f'\t.rept {self._max_dvalues}\n')
-        asm_file.write(f'\tstr r4, [r6], #4\n')
-        asm_file.write(f'\t.endr\n')
+        if self._max_dvalues > 0:
+            asm_file.write(f'\tmov r4, r11, lsl #16\t; 32767<<16\n')
+            asm_file.write(f'\t.rept {self._max_dvalues}\t; Max envd values.\n')
+            asm_file.write(f'\tstr r4, [r6], #4\n')
+            asm_file.write(f'\t.endr\n')
+        else:
+            asm_file.write(f'\t; No envd values to reset.\n')
         asm_file.write(f'\tmov pc, lr\n\n')
 
         asm_file.write('; ============================================================================\n\n')
@@ -1134,12 +1142,6 @@ class AkpParser:
         if self._max_dvalues > 0:
             asm_file.write(f'\t.skip {self._max_dvalues}*4\n')
 
-        asm_file.write('AK_CmbCounts:\n')
-        asm_file.write(f'\t.skip 24*4\n')
-
-        asm_file.write('AK_DlyCounts:\n')
-        asm_file.write(f'\t.skip 16*4\n')
-
         asm_file.write('AK_ADSRValues:\n')
         if len(self._adsr_values) > 0:
             for params in self._adsr_values:
@@ -1156,8 +1158,14 @@ class AkpParser:
                 asm_file.write(f'\t.long {releaseAmount}\t; releaseAmount\n')
                 asm_file.write(f'\t.long {peak}\t; peak\n')
 
-        asm_file.write('AK_BodgeSamples:\n')
         if self._legacy_bugs:
+            asm_file.write('AK_CmbCounts:\n')
+            asm_file.write(f'\t.skip 24*4\n')
+
+            asm_file.write('AK_DlyCounts:\n')
+            asm_file.write(f'\t.skip 16*4\n')
+
+            asm_file.write('AK_OverflowSamples:\n')
             asm_file.write('\t.skip AK_MaxInstruments\n')
             asm_file.write('\t.p2align 2\n')
 
@@ -1172,45 +1180,56 @@ class AkpParser:
     def WriteHeader(self, asm_file):
         # Standard header.
         asm_file.write('; ============================================================================\n')
-        asm_file.write('; akp2arc.py\n')
-        asm_file.write(f'; input = {src}.\n')
+        asm_file.write('; Generated with Aklang2Acorn.py v1.0, by kieran/Bitshifters 2024.\n')
+        asm_file.write(f"; Based on Alcatraz Amigaklang rendering core. (c) Jochen 'Virgill' Feldkötter 2020-2024.\n")
+        asm_file.write("; And Aklang2Asm by Dan/Lemon. 2021-2022.\n")
+        asm_file.write(f"; Input Aklang script = '{src}'\n")
+        if self._legacy_bugs:
+            asm_file.write(f'; => Implements workarounds for legacy bugs (buffer overrun and loopgen).\n')
+        asm_file.write(';\n')
+        asm_file.write("; Define macro 'AK_PROGRESS' for whatever per-instrument progress callback you require (if any).\n")
+        asm_file.write("; Define macro 'AK_FINE_PROGRESS' for whatever per-byte progress callback you require (if any).\n")
+        asm_file.write("; Define symbol 'AK_CLEAR_FIRST_2_BYTES' to true to zero out the first two bytes of each sample, Amiga style.\n")
+        asm_file.write("; Call 'AK_Generate' with the registers listed below.\n")
         asm_file.write('; ============================================================================\n\n')
 
-        asm_file.write('.equ AK_MaxInstruments,\t31\n')
-        asm_file.write('.equ AK_MaxExtSamples,\t8\n\n')
+        asm_file.write('.equ AK_MaxInstruments,\t\t31\n')
+        asm_file.write('.equ AK_MaxExtSamples,\t\t8\n\n')
 
-        asm_file.write('.equ AK_LPF,\t\t\t0\n')
-        asm_file.write('.equ AK_HPF,\t\t\t1\n')
-        asm_file.write('.equ AK_BPF,\t\t\t2\n\n')
+        asm_file.write('.equ AK_LPF,\t\t\t\t0\n')
+        asm_file.write('.equ AK_HPF,\t\t\t\t1\n')
+        asm_file.write('.equ AK_BPF,\t\t\t\t2\n\n')
 
-        asm_file.write('.equ AK_CHORD1,\t\t\t0\n')
-        asm_file.write('.equ AK_CHORD2,\t\t\t1\n')
-        asm_file.write('.equ AK_CHORD3,\t\t\t2\n\n')
+        asm_file.write('.equ AK_CHORD1,\t\t\t\t0\n')
+        asm_file.write('.equ AK_CHORD2,\t\t\t\t1\n')
+        asm_file.write('.equ AK_CHORD3,\t\t\t\t2\n\n')
 
         asm_file.write('.equ ADSR_Attack,\t\t\t0\n')
         asm_file.write('.equ ADSR_Decay,\t\t\t1\n')
         asm_file.write('.equ ADSR_Sustain,\t\t\t2\n')
         asm_file.write('.equ ADSR_Release,\t\t\t3\n\n')
 
-        asm_file.write('.equ AK_SMPLEN,\t\t\t(AK_SmpLen-AK_Vars)\n')
-        asm_file.write('.equ AK_EXTSMPLEN,\t\t(AK_ExtSmpLen-AK_Vars)\n')
-        asm_file.write('.equ AK_NOISESEEDS,\t\t(AK_NoiseSeeds-AK_Vars)\n')
-        asm_file.write('.equ AK_SMPADDR,\t\t(AK_SmpAddr-AK_Vars)\n')
-        asm_file.write('.equ AK_EXTSMPADDR,\t\t(AK_ExtSmpAddr-AK_Vars)\n')
-        asm_file.write('.equ AK_OPINSTANCE,\t\t(AK_OpInstance-AK_Vars)\n')
-        asm_file.write('.equ AK_ENVDVALUE,\t\t(AK_EnvDValue-AK_Vars)\n')
-        asm_file.write('.equ AK_CMBCOUNTS,\t\t(AK_CmbCounts-AK_Vars)\n')
-        asm_file.write('.equ AK_DLYCOUNTS,\t\t(AK_DlyCounts-AK_Vars)\n')
-        asm_file.write('.equ AK_ADSRVALUES,\t\t(AK_ADSRValues-AK_Vars)\n\n')
-        asm_file.write('.equ AK_BODGESAMPLES,\t\t(AK_BodgeSamples-AK_Vars)\n\n')
+        asm_file.write('.equ AK_SMPLEN,\t\t\t\t(AK_SmpLen-AK_Vars)\n')
+        asm_file.write('.equ AK_EXTSMPLEN,\t\t\t(AK_ExtSmpLen-AK_Vars)\n')
+        asm_file.write('.equ AK_NOISESEEDS,\t\t\t(AK_NoiseSeeds-AK_Vars)\n')
+        asm_file.write('.equ AK_SMPADDR,\t\t\t(AK_SmpAddr-AK_Vars)\n')
+        asm_file.write('.equ AK_EXTSMPADDR,\t\t\t(AK_ExtSmpAddr-AK_Vars)\n')
+        asm_file.write('.equ AK_OPINSTANCE,\t\t\t(AK_OpInstance-AK_Vars)\n')
+        asm_file.write('.equ AK_ENVDVALUE,\t\t\t(AK_EnvDValue-AK_Vars)\n')
+        asm_file.write('.equ AK_ADSRVALUES,\t\t\t(AK_ADSRValues-AK_Vars)\n\n')
 
-        asm_file.write(f'.equ AK_SMP_LEN,\t\t{self._total_smp_len}\n')
-        asm_file.write(f'.equ AK_EXT_SMP_LEN,\t{self._total_ext_smp_len}\n\n')
+        if self._legacy_bugs:
+            asm_file.write('.equ AK_CMBCOUNTS,\t\t\t(AK_CmbCounts-AK_Vars)\n')
+            asm_file.write('.equ AK_DLYCOUNTS,\t\t\t(AK_DlyCounts-AK_Vars)\n')
+            asm_file.write('.equ AK_OVERFLOWSAMPLES,\t(AK_OverflowSamples-AK_Vars)\t\n\n')
+
+        asm_file.write(f'.equ AK_SMP_LEN,\t\t\t{self._total_smp_len}\n')
+        asm_file.write(f'.equ AK_EXT_SMP_LEN,\t\t{self._total_ext_smp_len}\n\n')
 
         asm_file.write('; ============================================================================\n')
-        asm_file.write('; r8 = Sample Buffer Start Address\n')
-        asm_file.write('; r9 = 32768 Bytes Temporary Work Buffer Address (can be freed after sample rendering complete)\n')
-        asm_file.write('; r10 = External Samples Address (need not be in chip memory, and can be freed after sample rendering complete)\n')
+        asm_file.write('; R8 = Sample Buffer Start Address (AK_SMP_LEN bytes)\n')
+        asm_file.write('; R9 = Temporary Work Buffer Address (AK_MaxTempBuffers * 2048 * 4 = AK_TempBufferSize bytes) (can be freed after sample rendering complete)\n')
+        asm_file.write('; R10 = External Samples Address (can be freed after sample rendering complete)\n')
         asm_file.write('; ============================================================================\n\n')
         asm_file.write('AK_Generate:\n')
         asm_file.write('\tstr lr, [sp, #-4]!\n\n')
@@ -1237,7 +1256,7 @@ class AkpParser:
         asm_file.write(f'\tsubs r7, r7, #1\n')
         asm_file.write(f'\tbne ExSmpAdrLoop\n\n')
 
-        asm_file.write(f'.if _EXTERNAL_SAMPLES\n')
+        asm_file.write(f'.if AK_EXT_SMP_LEN > 0\n')
         asm_file.write(f'\t; Convert external samples from stored deltas\n')
         asm_file.write(f'\tmov r7, #AK_EXT_SMP_LEN\n')
         asm_file.write(f'\tmov r6, r10\n')
@@ -1264,7 +1283,7 @@ class AkpParser:
         asm_file.write('; r6 = temp\n')
         asm_file.write('; r7 = Sample byte count\n')
         asm_file.write('; r8 = Sample Buffer Start Address\n')
-        asm_file.write('; r9 = 8*2048 word (=65536 byte) Temporary Work Buffer Address (can be freed after sample rendering complete)\n')
+        asm_file.write('; r9 = AK_MaxTempBuffers*2048 word (>=65536 byte) Temporary Work Buffer Address (can be freed after sample rendering complete)\n')
         asm_file.write('; r10 = Base of AK_Vars\n')
         asm_file.write('; r11 = 36767 (0x7fff)\n')
         asm_file.write('; r12 = temp\n')
