@@ -2,20 +2,19 @@ ArchieKlang
 ~~~
 
 Questions:
-- What happens to samples that go off the end?
-E.g. in Chord Gen there is a shift (offset) value - this can easily go off the end once Note 12 is included (sample index *2). ==> presume 0 sample byte.
+- What happens to samples that go off the end? - BUG
+E.g. in Chord Gen there is a shift (offset) value - this can easily go off the end once Note 12 is included (sample index *2). ==> presume 0 sample byte?
 
-- Looks like a small precision error with LoopGen vs C code?
+- Looks like a small precision error with LoopGen vs C code? - FIXED WITH CODE FROM AMIGAKLANGGUI
   Trying to lerp but from 0x7fff to 0x0.
-
 
 TODO:
 - Implement remaining nodes
-    - Distortion
-    - 1-pole filter
-    - ADSR envelope
+    - Distortion - DONE
+    - 1-pole filter - DONE
+    - ADSR envelope - DONE
 - Implement external samples - DONE
-- Test all example MODs - IN PROGRESS
+- Test all example MODs - DONE
     - calcpreculation.mod -                     BUILT: PASSED! (after RE-EXPORT)
     - JosSs-Cream.mod -                         BUILT: 2/21 errors (max 1)
     - JosSs-DualPanoply.mod -                   BUILT: PASSED! (notch)
@@ -31,18 +30,18 @@ TODO:
     - Virgill-mothership.mod -                  BUILT: PASSED!
     - Virgill-nihil admirari.mod -              BUILT: PASSED!
     - Virgill-redrum redrum.mod -               BUILT: PASSED!
-- Implement 16-bit linear to 8-bit log conversion. - NOT DOING
+- Implement 16-bit linear to 8-bit log conversion. - NOT DOING (YET?)
     - Can't do this inline due to clone sample :S
     - Would have to save all samples at 16/32-bit linear then log convert after.
     - Not impossible but shelve for now.
-- Smaller code implementation w/ parameterised fn calls rather than inline.
-- Tidy up documentation.
+- Smaller code implementation w/ parameterised fn calls rather than inline?
+- Tidy up documentation. - NEED PROPER README.MD FOR GITHUB
 - Replacement aklang2asm.bat for Archie - IN PROGRESS
 - Contact Virgill - IN PROGRESS
 - Update AmigaKlangGUI to fix known bugs - IN PROGRESS
 - Update AmigaKlangGUI to add Archie colour theme - IN PROGRESS
 
-1/ CloneReverse is bug:
+1/ CloneReverse buffer overrun bug:
 Clone Reverse reads one byte beyond the end of the cloned sample.
 In AmigaKlangGUI the sample data is held in separate arrays.
 In AmigaKlangGUI this is fine as it contains the overrun sample data.
@@ -51,7 +50,7 @@ Only solution for this would be to store the extra byte somewhere after doing lo
 Then special case reading this byte...
 FIX: Start reading sample from length-1
 
-LoopGen bug:
+2/ LoopGen buffer overrun bug:
 Ask Virgill why the AmigaKlangGUI has the +2 offset in loopgen.
 And stop the clone reverse from reading over the end of the sample...
 Looks like sample lengths can only be even. => Amiga limitation
@@ -59,16 +58,16 @@ Looks like loop length can only be even. => All Amiga samples loop.
 Loop offset < loop length requires +2
 FIX: Assume loop length is actually -2
 
-Noise bug:
+3/ Static counter bugs:
+Static index arrays in cmb_flt_n and dly_cyc never get reset.
+FIX: just add Array.Clear calls to initarrays()
+
+4/ Noise bug in runtime:
 The runtime implemation synth() function the loop runs one byte too far due to smp <= SmpLength[..]
 This means an extra iteration of the noise generator per node per instrument.
 Which makes the noise go out of sync with the AmigaKlangGUI.
 
-Static counter bug:
-Static index arrays in cmb_flt_n and dly_cyc never get reset.
-FIX: just add Array.Clear calls to initarrays()
-
-Temp buffer bug:
+5/ Temp buffer overrun bug in runtime:
 Using reverb and dly_cyc uses more than 8 buffers so need larger temporary workspace...
 ==> Runtime problem.
 

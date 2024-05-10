@@ -1,5 +1,5 @@
-# Aklang2Acorn.py (aka akp2arc.py) version 1.0 (May 2024).
-# Converts Amigaklang patch data to ARM asm from Dan table (aka 'script.txt')
+# akp2arc.py (aka Aklang2Acorn) version 1.0, May 2024.
+# Converts AmigaKlang patch data to ARM asm (vasm format) from a Dan table (aka 'script.txt')
 # Written by kieran/Bitshifters. (https://bitshifters.github.io/)
 # Based on Alcatraz Amigaklang rendering core. (c) Jochen 'Virgill' Feldkötter 2020-2024.
 # And Aklang2Asm V1.1, by Dan/Lemon. 2021-2022.
