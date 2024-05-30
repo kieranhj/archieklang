@@ -730,7 +730,7 @@ class AkpParser:
             asm_file.write(f'\tmov r{var-1}, r4\n')
         elif mode==1:
             asm_file.write(f'\tsub r{var-1}, r{val_V[0]-1}, r4\n')
-            self.sign_extend(asm_file, var-1)
+            self.clamp(asm_file, var)
         else:
             asm_file.write(f'\tmov r{var-1}, #0\n')
 

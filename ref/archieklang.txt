@@ -36,10 +36,10 @@ TODO:
     - Not impossible but shelve for now.
 - Smaller code implementation w/ parameterised fn calls rather than inline?
 - Tidy up documentation. - NEED PROPER README.MD FOR GITHUB
-- Replacement aklang2asm.bat for Archie - IN PROGRESS
-- Contact Virgill - IN PROGRESS
-- Update AmigaKlangGUI to fix known bugs - IN PROGRESS
-- Update AmigaKlangGUI to add Archie colour theme - IN PROGRESS
+- Replacement aklang2asm.bat for Archie - DONE
+- Contact Virgill - DONE
+- Update AmigaKlangGUI to fix known bugs - DONE
+- Update AmigaKlangGUI to add Archie colour theme - DONE
 
 1/ CloneReverse buffer overrun bug:
 Clone Reverse reads one byte beyond the end of the cloned sample.
