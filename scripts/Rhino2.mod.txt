@@ -1,0 +1,189 @@
+3498, 1832, 1276, 756, 800, 12222, 0, 0
+$ Rhino-Kick, 3488, 2048, 1440, N
+#
+v1 = imported_sample(smp,0);
+
+$ Rhino-Kick-Filter, 2816, 2048, 768, N
+#
+v1 = clone(smp,0, 0);
+v1 = cmb_flt_n(1, v1, 32, 98, 128);
+v1 = sv_flt_n(2, v1, 18, 0, 2);
+
+$ Rhino-Snare, 3072, 3070, 2, N
+#
+v1 = imported_sample(smp,1);
+v3 = enva(2, 6, 0, 128);
+v2 = mul(v1, v3);
+v2 = dly_cyc(4, v2, 1024, 52);
+v1 = add(v1, v2);
+v1 = distortion(v1, 32);
+
+$ Rhino-Snare-Reverb, 5632, 3228, 2404, Y
+#
+v1 = imported_sample(smp,1);
+v3 = enva(1, 6, 0, 128);
+v2 = mul(v1, v3);
+v2 = sv_flt_n(3, v2, 18, 127, 1);
+v2 = reverb(v2, 112, 32);
+v1 = add(v1, v2);
+
+$ Rhino-Hat1, 1024, 1022, 2, N
+#
+v1 = imported_sample(smp,3);
+
+$ Rhino-Hat2, 1024, 1022, 2, N
+#
+v1 = imported_sample(smp,4);
+
+$ Rhino-Kick+Hat, 3488, 2048, 1440, N
+#
+v1 = imported_sample(smp,0);
+v2 = imported_sample(smp,3);
+v1 = add(v1, v2);
+
+$ Rhino-Percussion-Reverb, 7168, 3800, 3368, Y
+#
+v1 = imported_sample(smp,2);
+v3 = enva(1, 3, 0, 128);
+v2 = mul(v1, v3);
+v2 = sv_flt_n(3, v2, 19, 127, 1);
+v2 = reverb(v2, 112, 24);
+v1 = add(v1, v2);
+
+$ Rhino-Percussion-Loop, 4096, 3800, 296, N
+#
+v1 = imported_sample(smp,2);
+v1 = sh(1, v1, 2);
+v3 = enva(2, 6, 0, 128);
+v2 = mul(v1, v3);
+v2 = cmb_flt_n(4, v2, 1024, 94, 128);
+v1 = add(v1, v2);
+
+$ Rhino-Kickbass1, 4096, 3584, 512, Y
+#
+v1 = clone(smp,6, 0);
+v1 = cmb_flt_n(1, v1, 512, 112, 128);
+v2 = envd(2, 11, 0, 128);
+v2 = mul(v2, 128);
+v1 = sv_flt_n(4, v1, v2, 127, 0);
+
+$ Rhino-Kickbass2, 4096, 3584, 512, Y
+#
+v1 = clone(smp,0, 0);
+v1 = cmb_flt_n(1, v1, 512, 112, 128);
+v2 = envd(2, 11, 0, 128);
+v2 = mul(v2, 128);
+v3 = osc_saw(4, 512, 22);
+v1 = add(v1, v3);
+v1 = sv_flt_n(6, v1, v2, 127, 0);
+
+$ Rhino-Percussion-Synth, 4096, 3800, 296, N
+#
+v1 = clone(smp,2, 0);
+v1 = cmb_flt_n(1, v1, 512, 112, 128);
+v2 = envd(2, 11, 0, 128);
+v2 = mul(v2, 128);
+v1 = sv_flt_n(4, v1, v2, 127, 0);
+
+$ Rhino-String-Low, 49152, 24576, 24576, Y
+#
+v1 = imported_sample(smp,5);
+v1 = reverb(v1, 127, 20);
+v2 = osc_saw(2, 2048, 37);
+v1 = add(v1, v2);
+v1 = sv_flt_n(5, v1, 42, 127, 0);
+v2 = osc_sine(7, 16, 128);
+v2 = mul(v2, 42);
+v2 = add(v2, 42);
+v3 = osc_tri(10, 4096, v2);
+v1 = add(v1, v3);
+
+$ Rhino-Kickbass-Reso, 4096, 3840, 256, Y
+#
+v1 = clone(smp,1, 0);
+v1 = cmb_flt_n(1, v1, 256, 112, 128);
+v2 = envd(2, 12, 0, 128);
+v2 = mul(v2, 128);
+v1 = sv_flt_n(4, v1, v2, 14, 0);
+
+$ Rhino-Chord1, 24576, 12288, 12288, Y
+#
+v1 = chordgen(0, 12, 3, 7, 10, 0);
+v1 = onepole_flt(1, v1, 16, 1);
+v2 = osc_sine(2, 256, 64);
+v1 = add(v1, v2);
+
+$ Rhino-Chord2, 24576, 12288, 12288, Y
+#
+v1 = chordgen(0, 12, 3, 8, 10, 0);
+v1 = onepole_flt(1, v1, 16, 1);
+v2 = osc_sine(2, 409, 64);
+v1 = add(v1, v2);
+
+$ Rhino-Chord3, 24576, 12288, 12288, Y
+#
+v1 = chordgen(0, 12, 2, 7, 9, 0);
+v1 = onepole_flt(1, v1, 16, 1);
+v2 = osc_sine(2, 512, 64);
+v1 = add(v1, v2);
+
+$ Rhino-Chord4, 24576, 12288, 12288, Y
+#
+v1 = chordgen(0, 12, 7, 8, 10, 57);
+v1 = onepole_flt(1, v1, 16, 1);
+v2 = osc_sine(2, 342, 64);
+v1 = add(v1, v2);
+
+$ Rhino-Chord5, 24576, 12288, 12288, Y
+#
+v1 = chordgen(0, 12, 3, 7, 8, 57);
+v1 = onepole_flt(1, v1, 1, 1);
+v2 = osc_sine(2, 256, 64);
+v1 = add(v1, v2);
+
+$ Rhino-Chord6, 24576, 12288, 12288, Y
+#
+v1 = chordgen(0, 12, 3, 9, 6, 57);
+v1 = onepole_flt(1, v1, 1, 1);
+v2 = osc_sine(2, 256, 64);
+v1 = add(v1, v2);
+
+$ Rhino-Pluck-Reverb, 16384, 8192, 8192, N
+#
+v1 = imported_sample(smp,5);
+v1 = distortion(v1, 127);
+v2 = osc_sine(2, 2048, 98);
+v1 = add(v1, v2);
+v3 = envd(4, 9, 0, 128);
+v1 = mul(v1, v3);
+v1 = reverb(v1, 112, 16);
+
+$ Rhino-Lead, 12288, 6144, 6144, Y
+#
+v1 = osc_saw(0, 4096, 128);
+v2 = osc_sine(1, 2044, 128);
+v1 = add(v1, v2);
+v2 = osc_sine(3, 1024, 12);
+v1 = add(v1, v2);
+v1 = cmb_flt_n(5, v1, 43, 125, 128);
+v1 = onepole_flt(6, v1, 1, 1);
+v1 = onepole_flt(7, v1, 96, 0);
+
+$ Rhino-plucked1, 8192, 4096, 4096, Y
+#
+v1 = chordgen(0, 21, 7, 0, 0, 0);
+v2 = envd(1, 7, 0, 128);
+v1 = mul(v1, v2);
+v2 = mul(v2, 90);
+v1 = sv_flt_n(4, v1, v2, 77, 0);
+v1 = reverb(v1, 122, 24);
+
+$ Rhino-Plucked2, 8192, 4096, 4096, Y
+#
+v1 = chordgen(0, 21, 5, 0, 0, 0);
+v2 = envd(1, 7, 0, 128);
+v1 = mul(v1, v2);
+v2 = mul(v2, 90);
+v1 = sv_flt_n(4, v1, v2, 77, 0);
+v1 = reverb(v1, 122, 24);
+
