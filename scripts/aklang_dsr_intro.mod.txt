@@ -1,0 +1,215 @@
+0, 0, 0, 0, 0, 0, 0, 0
+$ discokick-ed, 2000, 1998, 2, N
+#
+v2 = osc_pulse(0, 226, 128, 32);
+v3 = osc_noise(128);
+v2 = add(v3, v2);
+v3 = envd(3, 4, 0, 15);
+v3 = mul(v3, v2);
+v1 = envd(6, 5, 0, 128);
+v1 = mul(v1, 523);
+v1 = osc_tri(8, v1, 128);
+v2 = envd(9, 5, 0, 128);
+v1 = mul(v2, v1);
+v1 = add(v3, v1);
+
+$ hihat, 1000, 500, 500, N
+#
+v1 = osc_noise(128);
+v2 = enva(1, 4, 0, 128);
+v3 = envd(2, 4, 22, 128);
+v4 = envd(3, 6, 0, 128);
+v3 = mul(v4, v3);
+v2 = mul(v3, v2);
+v1 = mul(v2, v1);
+v2 = sv_flt_n(8, v1, 81, 6, 3);
+v3 = envd(10, 2, 0, 128);
+v2 = mul(v3, v2);
+v1 = add(v2, v1);
+
+$ perc, 1000, 500, 500, N
+#
+v2 = osc_tri(0, 880, 128);
+v3 = envd(1, 5, 0, 128);
+v2 = mul(v3, v2);
+v1 = sv_flt_n(3, v2, 107, 31, 0);
+v2 = envd(5, 2, 4, 128);
+v3 = mul(v2, 440);
+v2 = osc_tri(7, v2, 128);
+v3 = enva(8, 2, 0, 56);
+v2 = mul(v3, v2);
+v1 = add(v2, v1);
+v2 = envd(13, 5, 0, 128);
+v1 = mul(v2, v1);
+
+$ snare, 2000, 999, 1001, N
+#
+v2 = osc_tri(0, 3216, 128);
+v3 = ctrl(v2);
+v1 = osc_pulse(2, 1047, 54, v3);
+v2 = envd(3, 2, 0, 128);
+v1 = mul(v2, v1);
+v3 = envd(5, 8, 0, 41);
+v3 = mul(v3, 4274);
+v4 = osc_tri(7, v3, 128);
+v3 = envd(8, 4, 0, 128);
+v3 = mul(v4, v3);
+v1 = add(v3, v1);
+v2 = osc_noise(17);
+v1 = add(v2, v1);
+v2 = ctrl(v3);
+v1 = sv_flt_n(14, v1, v2, 81, 0);
+
+$ kick+snare, 2000, 1998, 2, N
+#
+v1 = clone(smp,0, 0);
+v2 = clone(smp,3, 0);
+v1 = add(v2, v1);
+
+$ chordbase, 8000, 4000, 4000, N
+#
+v2 = osc_saw(0, 2100, 128);
+v3 = osc_saw(1, 2090, 128);
+v2 = add(v3, v2);
+v1 = osc_pulse(3, 1047, 59, 32);
+v1 = add(v2, v1);
+v2 = envd(6, 2, 52, 128);
+v3 = envd(7, 16, 0, 128);
+v2 = mul(v3, v2);
+v1 = mul(v2, v1);
+
+$ chord1, 10556, 6158, 4398, N
+#
+v1 = chordgen(0, 5, 3, 8, 12, 0);
+v2 = envd(2, 6, 0, 128);
+v2 = ctrl(v2);
+v1 = sv_flt_n(4, v1, v2, 120, 0);
+
+$ chord2, 10556, 5938, 4618, N
+#
+v1 = chordgen(0, 5, 3, 5, 10, 127);
+v2 = envd(2, 6, 0, 128);
+v2 = ctrl(v2);
+v1 = sv_flt_n(4, v1, v2, 60, 0);
+
+$ chord3, 10226, 6158, 4068, N
+#
+v1 = chordgen(0, 5, 1, 5, 10, 0);
+v2 = envd(2, 5, 0, 128);
+v2 = ctrl(v2);
+v1 = sv_flt_n(4, v1, v2, 60, 0);
+
+$ chord4, 10556, 5718, 4838, N
+#
+v1 = chordgen(0, 5, 1, 5, 8, 0);
+v2 = envd(2, 5, 0, 128);
+v2 = ctrl(v2);
+v1 = sv_flt_n(4, v1, v2, 60, 0);
+
+$ bassone, 6000, 3000, 3000, N
+#
+v2 = osc_saw(0, 523, 128);
+v1 = osc_tri(1, 267, 70);
+v1 = add(v2, v1);
+v2 = osc_tri(4, 2, 128);
+v3 = enva(5, 9, 0, 128);
+v2 = mul(v3, v2);
+v4 = osc_saw(7, 3, 128);
+v3 = envd(8, 7, 0, 128);
+v3 = mul(v4, v3);
+v2 = add(v3, v2);
+v2 = ctrl(v2);
+v1 = sv_flt_n(12, v1, v2, 44, 0);
+v2 = adsr(14, 32639, 4516, 4915200, 4205, 6391, 8388352);
+v1 = mul(v2, v1);
+
+$ blup, 3520, 1998, 1522, N
+#
+v1 = osc_tri(0, 1568, 60);
+v2 = osc_tri(1, 3136, 60);
+v2 = dly_cyc(2, v2, 577, 83);
+v1 = add(v2, v1);
+v2 = adsr(4, 32639, 3639, 0, 957, 0, 8388352);
+v1 = mul(v2, v1);
+
+$ blup12, 2640, 2198, 442, N
+#
+v1 = osc_tri(0, 1568, 60);
+v2 = osc_tri(1, 3136, 60);
+v2 = dly_cyc(2, v2, 577, 82);
+v1 = add(v2, v1);
+v2 = osc_tri(4, 6272, 60);
+v2 = dly_cyc(5, v2, 800, 26);
+v1 = add(v2, v1);
+v2 = adsr(7, 32639, 3639, 0, 77, 0, 8388352);
+v1 = mul(v2, v1);
+
+$ exp-pi, 21552, 10776, 10776, Y
+#
+v1 = osc_tri(0, 6, 128);
+v1 = ctrl(v1);
+v1 = osc_pulse(2, 4186, 9, v1);
+v2 = osc_saw(3, 2093, 30);
+v1 = add(v2, v1);
+v2 = sh(5, v1, 64);
+v2 = ctrl(v2);
+v1 = sv_flt_n(7, v1, v2, 88, 1);
+v2 = adsr(8, 8183, 442, 3407872, 9261, 3407872, 8388352);
+v1 = mul(v2, v1);
+
+$ exp-piano, 9000, 4499, 4501, Y
+#
+v1 = chordgen(0, 13, 0, 0, 0, 0);
+v2 = osc_saw(1, 16, 128);
+v2 = mul(v2, -32768);
+v2 = ctrl(v2);
+v3 = osc_tri(4, 206, 76);
+v4 = envd(5, 5, 0, 128);
+v3 = mul(v4, v3);
+v3 = ctrl(v3);
+v1 = sv_flt_n(8, v1, v3, v2, 0);
+
+$ lead2-sh96, 7918, 4012, 3906, Y
+#
+v2 = osc_tri(0, 4186, 50);
+v1 = osc_saw(1, 2093, 20);
+v1 = add(v2, v1);
+v2 = osc_noise(117);
+v2 = sh(6, v2, 96);
+v2 = ctrl(v2);
+v3 = osc_saw(8, 5, 67);
+v3 = ctrl(v3);
+v1 = sv_flt_n(12, v1, v2, v3, 0);
+
+$ maracas, 6000, 3000, 3000, N
+#
+v1 = osc_noise(58);
+v2 = enva(1, 4, 0, 128);
+v3 = envd(2, 4, 22, 128);
+v4 = envd(3, 10, 25, 128);
+v3 = mul(v4, v3);
+v2 = mul(v3, v2);
+v1 = mul(v2, v1);
+v2 = sv_flt_n(7, v1, 81, 6, 3);
+v3 = adsr(9, 32639, 63, 8323072, -60563, 127, 8388352);
+v2 = mul(v3, v2);
+v1 = add(v2, v1);
+v3 = envd(12, 13, 0, 128);
+v1 = mul(v3, v1);
+
+$ hihat open, 6000, 3000, 3000, N
+#
+v1 = osc_noise(128);
+v2 = enva(1, 4, 0, 128);
+v3 = envd(2, 4, 75, 128);
+v4 = envd(3, 6, 20, 128);
+v3 = mul(v4, v3);
+v2 = mul(v3, v2);
+v1 = mul(v2, v1);
+v2 = sv_flt_n(8, v1, 81, 6, 2);
+v3 = envd(10, 2, 0, 128);
+v2 = mul(v3, v2);
+v1 = add(v2, v1);
+v2 = envd(13, 15, 0, 128);
+v1 = mul(v2, v1);
+
