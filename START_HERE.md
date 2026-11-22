@@ -34,4 +34,4 @@ ArchieKlang: a port of Virgill's AmigaKlang soft synth to the Acorn Archimedes. 
 
 ## See also
 
-- `README.md`; `D:\archie\mine\aklang`, `D:\archie\mine\archie-verse`.
+- `README.md`; `D:\bitshifters\aklang`, `D:\archie\mine\archie-verse`.
