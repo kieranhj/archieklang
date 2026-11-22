@@ -20,7 +20,7 @@ ArchieKlang: a port of Virgill's AmigaKlang soft synth to the Acorn Archimedes. 
 ## Build and run
 
 - `make` (new wrapper): `make.bat $(SONG)`, default `SONG=Rhino2.mod`; `make SONG=Virgill-amigahub.mod` for another; `make compress`, `make songs`, `make help`.
-- Blocked (2026-11-22): `akp2arc.py` needs the Python package `parse` (`py -3 -m pip install parse`), which is not installed. MOD splitting works.
+- Works (2026-11-22): `akp2arc.py` (already Python 3) needs the Python package `parse`, installed on 2026-11-22 with `py -3 -m pip install --user parse` (parse 1.22.4). `make` builds Rhino2 end to end.
 - On success it writes `build\archieklang.bin` and copies it to `..\arculator\hostfs\archieklang,ff8`; run that in Arculator.
 
 ## Local changes
