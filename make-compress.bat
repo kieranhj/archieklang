@@ -61,5 +61,5 @@ echo Assembling loader...
 bin\vasmarm_std_win32.exe -L build\loader.txt -m250 -Fbin -opt-adr -o build\loader.bin lib\loader.asm
 
 echo Copying files...
-set HOSTFS=..\arculator\hostfs
+set HOSTFS=..\arculator\hostfs\Builds
 copy build\loader.bin "%HOSTFS%\archieklang,ff8"

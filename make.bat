@@ -51,5 +51,5 @@ if %ERRORLEVEL% neq 0 (
 )
 
 echo Copying files...
-set HOSTFS=..\arculator\hostfs
+set HOSTFS=..\arculator\hostfs\Builds
 copy build\archieklang.bin "%HOSTFS%\archieklang,ff8"
