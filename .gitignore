@@ -2,3 +2,4 @@ compile.txt
 loader.txt
 build/
 *.pyc
+.vscode/
